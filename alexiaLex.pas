@@ -192,6 +192,7 @@ type  //Gestor de mensajes
     //Evento que indica que se ha generado un mensaje (Info, Warning or Error)
     OnMessage: procedure(msgKind: TMessageKind; const msgInfo: TMsgInfo) of object;
     procedure info(const msgInfo: TMsgInfo);
+    procedure info(txt: string);
     procedure warn(const msgInfo: TMsgInfo);
     procedure error(const msgInfo: TMsgInfo);
   public  //Manejo de mensajes en cuadros de diálogos
@@ -203,7 +204,8 @@ type  //Gestor de mensajes
     {Se usa para comunicarse con la aplicación principal. Esto es muy útil cuando se
     integra el compilador con una IDE}
     OnMessageSys: procedure(const msgInfo: TMsgInfo) of object;
-    procedure msgSys(txt: string; row, col: Integer; const fname: string);
+    procedure sys(txt: string; row, col: Integer; const fname: string);
+    procedure sys(codMsg: integer);
   end;
 type //Clase "TContext"
   { TContextState }
@@ -395,6 +397,17 @@ begin
   inc(nInfos);
   if Assigned(OnMessage) then OnMessage(mkInfo, msgInfo);
 end;
+procedure TMessageManager.info(txt: string);
+{Versión simplificada de info().}
+begin
+  inc(nInfos);
+  //Usamos el objeto "minfo" como parámetro
+  minfo.txt := txt;
+  minfo.fname := '';
+  minfo.row := -1;
+  minfo.col := -1;
+  if Assigned(OnMessage) then OnMessage(mkInfo, minfo);
+end;
 procedure TMessageManager.warn(const msgInfo: TMsgInfo);
 begin
   inc(nWarns);
@@ -432,7 +445,7 @@ begin
   minfo.col := -1;
   if Assigned(OnMessage) then OnMessage(mkDlgErr, minfo);
 end;
-procedure TMessageManager.msgSys(txt: string; row, col: Integer;
+procedure TMessageManager.sys(txt: string; row, col: Integer;
   const fname: string);
 {Genera un mensaje al sistema.
 Como los mensajes (y los sistemas) pueden ser variados, no se usa un formato predefinido,
@@ -445,6 +458,14 @@ begin
   minfo.col := col;
   if Assigned(OnMessageSys) then OnMessageSys(minfo);
 end;
+procedure TMessageManager.sys(codMsg: integer);
+{Versión simplifcada de "sys()" que solo envía un código numérico como mensaje al
+sistema.}
+begin
+  minfo.row := codMsg;  //Solo utilizamos este campo
+  if Assigned(OnMessageSys) then OnMessageSys(minfo);
+end;
+
 { TScanner }
 //Fast versions of some functions.
 function TScanner._Bol: boolean;
