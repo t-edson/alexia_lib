@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="Project1.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos Y="12"/>
+        <UsageCount Value="22"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="..\alexiaLex.pas"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="154"/>
+        <CursorPos X="33" Y="259"/>
+        <FoldState Value=" TL0020121211]3712525 piStO01]O32 pKx8]C2]V5612 PDpU0 T590p01113 PkNpP]IMA21071b p1wL]RR112G p4uV020J]h T7CD511[B4PjDneE T8X214313[M5]7A]QKoa2 TCm3ID T3pg07C piZjF03A11222436 psTv40N01529 pjXlL0G6]dcjJ086]I5jL057]92jI054 PUc0 T0q1L134I]gdpcR1H]9eiRQ3E[y4iQj3F[95Ms3G]9biHS2E2]lkHrDS4H PiRk8N T6xK01A PD;80 THxbL_6 p0+bI3 TFxd426y"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="29">
+      <Position>
+        <Filename Value="..\alexiaLex.pas"/>
+        <Caret Line="1193" Column="8" TopLine="1181"/>
+      </Position>
+      <Position>
+        <Filename Value="..\alexiaLex.pas"/>
+        <Caret Line="1197" Column="8" TopLine="1180"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="16" Column="3"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="17"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="18"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="19"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="20" Column="14"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="17"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="18"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="19"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="20"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="17"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="18"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="19"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="20"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="17"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="18"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="19"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="20"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="17"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="18"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="9" Column="3"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="18"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="8" Column="75"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+      </Position>
+      <Position>
+        <Filename Value="Project1.lpr"/>
+        <Caret Line="3"/>
+      </Position>
+      <Position>
+        <Filename Value="..\alexiaLex.pas"/>
+        <Caret Line="1085" Column="3" TopLine="651"/>
+      </Position>
+      <Position>
+        <Filename Value="..\alexiaLex.pas"/>
+        <Caret Line="268" Column="24" TopLine="245"/>
+      </Position>
+      <Position>
+        <Filename Value="..\alexiaLex.pas"/>
+        <Caret Line="1122" Column="26" TopLine="1094"/>
+      </Position>
+      <Position>
+        <Filename Value="..\alexiaLex.pas"/>
+        <Caret Line="259" Column="33" TopLine="154"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>
