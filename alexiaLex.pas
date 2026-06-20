@@ -202,14 +202,81 @@ type  //Definición de tipos
     tkString   ,  //Literal String
     tkComment  ,  //Comment. Multi-line token.
     tkOperator ,  //Operators
-    tkDirective,  //
+    tkDirective,  //Directives
 //    tkAsm      ,  //
-    tkExpDelim ,  //
-    tkBlkDelim ,  //
+//    tkExpDelim ,  //Expression delimiter ";"
+    tkBlkDelim ,  //Block delimiter
     tkChar     ,  //
     tkKeyword  ,  //Reserved words
     tkDirDelim ,  //Delimitador de directiva. Usado solo para directivas.
     tkOthers      //
+  );
+  //Identifcador de tokens
+  TTokenIdent = (
+    tiOthers   ,  //Not identified.
+    //Keywords
+    tiArray    ,  //Keyword "ARRAY"
+    tiAsm      ,  //Keyword "ASM"
+    tiBegin    ,  //Keyword "BEGIN"
+    tiBreak    ,  //Keyword "BREAK"
+    tiCase     ,  //Keyword "CASE"
+    tiConst    ,  //Keyword "CONST"
+    tiConstruc ,  //Keyword "CONSTRUCTOR"
+    tiContinue ,  //Keyword "CONTINUE"
+    tiDestruc  ,  //Keyword "DESTRUCTOR"
+    tiDo       ,  //Keyword "DO"
+    tiDownto   ,  //Keyword "DOWNTO"
+    tiElse     ,  //Keyword "ELSE"
+    tiElsif    ,  //Keyword "ELSIF"
+    tiEnd      ,  //Keyword "END"
+    tiFalse    ,  //Keyword "FALSE"
+    tiFor      ,  //Keyword "FOR"
+    tiFunct    ,  //Keyword "FUNCTION"
+    tiIf       ,  //Keyword "IF"
+    tiImplem   ,  //Keyword "IMPLEMENTATION"
+    tiInterf   ,  //Keyword "INTERFACE"
+    tiLabel    ,  //Keyword "LABEL"
+    tiNil      ,  //Keyword "NIL"
+    tiObject   ,  //Keyword "OBJECT"
+    tiOf       ,  //Keyword "OF"
+    tiOperat   ,  //Keyword "OPERATOR"
+    tiOn       ,  //Keyword "ON"
+    tiProced   ,  //Keyword "PROCEDURE"
+    tiProgram  ,  //Keyword "PROGRAM"
+    tiRecord   ,  //Keyword "RECORD"
+    tiRepeat   ,  //Keyword "REPEAT"
+    tiSet      ,  //Keyword "SET"
+    tiThen     ,  //Keyword "THEN"
+    tiTo       ,  //Keyword "TO"
+    tiType     ,  //Keyword "TYPE"
+    tiUnit     ,  //Keyword "UNIT"
+    tiUntil    ,  //Keyword "UNTIL"
+    tiUses     ,  //Keyword "USES"
+    tiVar      ,  //Keyword "VAR"
+    tiWhile    ,  //Keyword "WHILE"
+    tiWith     ,  //Keyword "WITH"
+    tiXor      ,  //Keyword "XOR"
+    //Symbols
+    tiSemic    ,  //Symbol ";"
+    tiColon    ,  //Symbol ":"
+    tiComma    ,  //Symbol ","
+    tiParOpen  ,  //Symbol "("
+    tiParClos  ,  //Symbol ")"
+    //Operators
+    tiAnd      ,  //Operator "AND"
+    tiAssign   ,  //Operator ":="
+    tiDiv      ,  //Operator "/"
+    tiIDiv     ,  //Operator "DIV"
+    tiDot      ,  //Operator "."
+    tiIn       ,  //Operator "IN"
+    tiMinus    ,  //Operator "-"
+    tiMod      ,  //Operator "MOD"
+    tiNot      ,  //Operator "NOT"
+    tiOr       ,  //Operator "OR"
+    tiPlus     ,  //Operator "+"
+    tiShl      ,  //Operator "SHL"
+    tiShr      ,  //Operator "SHR"
+    tiTimes       //Operator "*"
   );
 
   { TContextState }
@@ -226,9 +293,9 @@ type  //Definición de tipos
     //Atributes of TContext
     row0    : integer;
     col0    : integer;
-    tokType : TTokenKind;
-    tokPrec : integer;
-    tokPrecU: integer;    //Precedence when "tokType" is "tkOperator" and operator can be used as unary operator.
+    tokType : TTokenKind;  //Token kind
+    tokIdent: TTokenIdent; //Token identifier
+    tokPrec : integer;     //Precedence when "tokType" is "tkOperator".
   end;
 type  //Clase "TContext"
 
@@ -244,9 +311,10 @@ type  //Clase "TContext"
     row0     : integer;    //From 1 to "nlin". ?
     col0     : integer;    //From 1 to "curSize". Set to 0 at the beginning. ?
     //Information for current token
-    tokType  : TTokenKind; //Current token kind.
-    tokPrec  : integer;    //Precedence when "tokType" is "tkOperator".
-    tokPrecU : integer;    //Precedence when "tokType" is "tkOperator" and operator can be used as unary operator.
+    tokType  : TTokenKind;  //Current token kind.
+    tokIdent : TTokenIdent; //Token identifier
+    tokPrec  : integer;     //Precedence when "tokType" is "tkOperator".
+    //tokPrecU : integer;    //Precedence when "tokType" is "tkOperator" and operator can be used as unary operator.
     //The rest of the state are defined by TScanner: frow, fcol, curLine, ...
   public  //Control for current position
     procedure GetContextState(out c: TContextState);
@@ -347,15 +415,15 @@ type  //Lexer TAleLexer
     procedure NewContextFromText(txt: string; fileSrc: String);
     function OpenContextFrom(filePath: string): boolean;
   public //Scan functions
-    token    : string;     //Current Token
-    tokType  : TTokenKind; //Current Token type
-    function tokL: string; inline; //token actual en minúscula
-    function atEol: Boolean; inline;
-    function atEof: Boolean;
-    procedure SkipWhites;
-    procedure SkipWhitesNoEOL;
-    procedure Next;       //Go to the next token.
-    procedure GotoEOL;    //Go to the EOL position.
+    token    : string;                //Current Token.
+    tokType  : TTokenKind;            //Current Token type.
+    function tokL: string; inline;    //Lower case current token.
+    function atEol: Boolean; inline;  //Detects when lexer is at End of Line.
+    function atEof: Boolean;          //Detects when lexer is at End of File.
+    procedure SkipWhites;             //Skip spaces and Line breaks.
+    procedure SkipWhitesNoEOL;        //Skip only spaces.
+    procedure Next;                   //Go to the next token.
+    procedure GotoEOL;                //Go to the EOL position.
   public  //Context debugging
     {$IFDEF debug_mode}
     procedure ShowContexts;
@@ -729,6 +797,7 @@ begin
       inc(fcol);
     until _Eol or not(curline[fcol] in [#32, #9]);
     tokType := tkSpace;
+    tokIdent := tiOthers;
     //Leaves (frow, fcol) in the begin of the next token.
   end;
   '0'..'9': begin
@@ -736,18 +805,21 @@ begin
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0'..'9']);
     tokType := tkLitNumber;
+    tokIdent := tiOthers;
   end;
   '$': begin
     repeat
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0'..'9','A'..'F','a'..'f']);
     tokType := tkLitNumber;
+    tokIdent := tiOthers;
   end;
   '%': begin
     repeat
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0','1']);
     tokType := tkLitNumber;
+    tokIdent := tiOthers;
   end;
   'A','a': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
@@ -755,13 +827,17 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if iden = 'AND' then begin
       tokType := tkOperator;
+      tokIdent := tiAnd;
       tokPrec := 5;
     end else if iden = 'ARRAY' then begin
       tokType := tkKeyword;
+      tokIdent := tiArray;
     end else if iden = 'ASM' then begin
       tokType := tkKeyword;
+      tokIdent := tiAsm;
     end else begin
       tokType := tkIdentifier;
+      tokIdent := tiOthers;
     end;
   end;
   'B','b': begin
@@ -770,8 +846,13 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if iden = 'BEGIN' then begin
       tokType := tkKeyword;
+      tokIdent := tiBegin;
+    end else if iden = 'BREAK' then begin
+      tokType := tkKeyword;
+      tokIdent := tiBreak;
     end else begin
       tokType := tkIdentifier;
+      tokIdent := tiOthers;
     end;
   end;
   'C','c': begin
@@ -780,27 +861,78 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if iden = 'CASE' then begin
       tokType := tkKeyword;
+      tokIdent := tiCase;
     end else if iden = 'CONST' then begin
       tokType := tkKeyword;
+      tokIdent := tiConst;
+    end else if iden = 'CONSTRUCTOR' then begin
+      tokType := tkKeyword;
+      tokIdent := tiConstruc;
+    end else if iden = 'CONTINUE' then begin
+      tokType := tkKeyword;
+      tokIdent := tiContinue;
     end else begin
       tokType := tkIdentifier;
+      tokIdent := tiOthers;
     end;
   end;
   'D','d': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string and not comparing the first letter.
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'DIV') then begin
+    if iden = 'DIV' then begin
       tokType := tkOperator;
+      tokIdent := tiIDiv;
       tokPrec := 5;
-    end else tokType := tkIdentifier;
+    end else if iden = 'DESTRUCTOR' then begin
+      tokType := tkKeyword;
+      tokIdent := tiDestruc;
+    end else if iden = 'DO' then begin
+      tokType := tkKeyword;
+      tokIdent := tiDo;
+    end else if iden = 'DOWNTO' then begin
+      tokType := tkKeyword;
+      tokIdent := tiDownto;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'E','e': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string and not comparing the first letter.
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'END') or (iden='ELSE') or (iden='ELSIF') then tokType := tkBlkDelim
-    else tokType := tkIdentifier;
+    if iden = 'END' then begin
+      tokType := tkBlkDelim;
+      tokIdent := tiEnd;
+    end else if iden='ELSE' then begin
+      tokType := tkBlkDelim;
+      tokIdent := tiElse;
+    end else if iden='ELSIF' then begin
+      tokType := tkBlkDelim;
+      tokIdent := tiElsif;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
+  end;
+  'F','f': begin
+    repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+    //Can be optimized using a first verification by size of the string and not comparing the first letter.
+    iden := Upcase(copy(curLine, col0, (fcol-col0)));
+    if iden='FALSE' then begin
+      tokType := tkKeyword;
+      tokIdent := tiFalse;
+    end else if (iden = 'FOR') then begin
+      tokType := tkKeyword;
+      tokIdent := tiFor;
+    end else if (iden = 'FUNCTION') then begin
+      tokType := tkKeyword;
+      tokIdent := tiFunct;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'I','i': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
@@ -808,12 +940,33 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if (iden = 'IN') then begin
       tokType := tkOperator;
+      tokIdent := tiIn;
       tokPrec := 3;
-    end else if iden = 'INTERFACE' then begin
+    end else if iden = 'IF' then begin
       tokType := tkKeyword;
+      tokIdent := tiIf;
     end else if iden = 'IMPLEMENTATION' then begin
       tokType := tkKeyword;
-    end else tokType := tkIdentifier;
+      tokIdent := tiImplem;
+    end else if iden = 'INTERFACE' then begin
+      tokType := tkKeyword;
+      tokIdent := tiInterf;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
+  end;
+  'L','l': begin
+    repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+    //Can be optimized using a first verification by size of the string and not comparing the first letter.
+    iden := Upcase(copy(curLine, col0, (fcol-col0)));
+    if (iden = 'LABEL') then begin
+      tokType := tkKeyword;
+      tokIdent := tiLabel;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'M','m': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
@@ -821,8 +974,12 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if (iden = 'MOD') then begin
       tokType := tkOperator;
+      tokIdent := tiMod;
       tokPrec := 5;
-    end else tokType := tkIdentifier;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'N','n': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
@@ -831,47 +988,151 @@ begin
     if (iden = 'NOT') then begin
       tokType := tkOperator;
       //tokPrec := 6;
-      tokPrecU := 6;
-    end else tokType := tkIdentifier;
+      //tokPrecU := 6;
+      tokIdent := tiNot;
+    end else if iden = 'NIL' then begin
+      tokType := tkKeyword;
+      tokIdent := tiNil;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'O','o': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string and not comparing the first letter.
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'OR') then begin
+    if (iden = 'OBJECT') then begin
+      tokType := tkKeyword;
+      tokIdent := tiObject;
+    end else if (iden = 'OF') then begin
+      tokType := tkKeyword;
+      tokIdent := tiOf;
+    end else if (iden = 'OPERATOR') then begin
+      tokType := tkKeyword;
+      tokIdent := tiOperat;
+    end else if (iden = 'ON') then begin
+      tokType := tkKeyword;
+      tokIdent := tiOn;
+    end else if (iden = 'OR') then begin
       tokType := tkOperator;
+      tokIdent := tiOr;
       tokPrec := 4;
-    end else tokType := tkIdentifier;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'P','p': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string and not comparing the first letter.
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'PROCEDURE') then begin
+    if iden = 'PROCEDURE' then begin
       tokType := tkKeyword;
-    end else tokType := tkIdentifier;
+      tokIdent := tiProced;
+    end else if iden = 'PROGRAM' then begin
+      tokType := tkKeyword;
+      tokIdent := tiProgram;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
+  end;
+  'R','r': begin
+    repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+    //Can be optimized using a first verification by size of the string and not comparing the first letter.
+    iden := Upcase(copy(curLine, col0, (fcol-col0)));
+    if iden = 'RECORD' then begin
+      tokType := tkKeyword;
+      tokIdent := tiRecord;
+    end else if iden = 'REPEAT' then begin
+      tokType := tkKeyword;
+      tokIdent := tiRepeat;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
+  end;
+  'S','s': begin
+    repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+    //Can be optimized using a first verification by size of the string and not comparing the first letter.
+    iden := Upcase(copy(curLine, col0, (fcol-col0)));
+    if iden = 'SET' then begin
+      tokType := tkKeyword;
+      tokIdent := tiSet;
+    end else if iden = 'SHL' then begin
+      tokType := tkOperator;
+      tokIdent := tiShl;
+    end else if iden = 'SHR' then begin
+      tokType := tkOperator;
+      tokIdent := tiShr;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'T','t': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string and not comparing the first letter.
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'TYPE') then begin
+    if (iden = 'THEN') then begin
       tokType := tkKeyword;
-    end else tokType := tkIdentifier;
+      tokIdent := tiThen;
+    end else if (iden = 'TO') then begin
+      tokType := tkKeyword;
+      tokIdent := tiTo;
+    end else if (iden = 'TYPE') then begin
+      tokType := tkKeyword;
+      tokIdent := tiType;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'U','u': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'UNTIL') then tokType := tkBlkDelim
-    else tokType := tkIdentifier;
+    if (iden = 'UNIT') then begin
+      tokType := tkKeyword;
+      tokIdent := tiUnit;
+    end else if (iden = 'UNTIL') then begin
+      tokType := tkBlkDelim;
+      tokIdent := tiUntil;
+    end else if (iden = 'USES') then begin
+      tokType := tkKeyword;
+      tokIdent := tiUses;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'V','v': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if (iden = 'VAR') then tokType := tkKeyword
-    else tokType := tkIdentifier;
+    if (iden = 'VAR') then begin
+      tokType := tkKeyword;
+      tokIdent := tiVar;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
+  end;
+  'W','w': begin
+    repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+    //Can be optimized using a first verification by size of the string and not comparing the first letter.
+    iden := Upcase(copy(curLine, col0, (fcol-col0)));
+    if (iden = 'WHILE') then begin
+      tokType := tkKeyword;
+      tokIdent := tiWhile;
+    end else if (iden = 'WITH') then begin
+      tokType := tkKeyword;
+      tokIdent := tiWith;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
   'X','x': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
@@ -879,44 +1140,69 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if (iden = 'XOR') then begin
       tokType := tkOperator;
+      tokIdent := tiXor;
       tokPrec := 4;
-    end else tokType := tkIdentifier;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiOthers;
+    end;
   end;
-  'F'..'H','J'..'L','Q'..'S','W','Y','Z','_',
-  'f'..'h','j'..'l','q'..'s','w','y','z': begin
+  'G','H','J','K','Q','Y','Z','_',
+  'g','h','j','k','q','y','z': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     tokType := tkIdentifier;
+    tokIdent := tiOthers;
   end;
-  '+','-': begin
+  '+': begin
     _NextChar;
-    if not _Eol and (curLine[fcol]='=') then begin  //+=, -=
+    if not _Eol and (curLine[fcol]='=') then begin  // +=
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 2;
-    end else begin   //+, -
+    end else begin   // +
       tokType := tkOperator;
+      tokIdent := tiPlus;
       tokPrec := 4;
-      tokPrecU := 6;
+      //tokPrecU := 6;
+    end;
+  end;
+  '-': begin
+    _NextChar;
+    if not _Eol and (curLine[fcol]='=') then begin  // -=
+      _NextChar;
+      tokType := tkOperator;
+      tokIdent := tiOthers;
+      tokPrec := 2;
+    end else begin   // -
+      tokType := tkOperator;
+      tokIdent := tiMinus;
+      tokPrec := 4;
+      //tokPrecU := 6;
     end;
   end;
   '~': begin
     _NextChar;
     tokType := tkOperator;
+    tokIdent := tiOthers;
     tokPrec := 4;
-    tokPrecU := 6;
+    //tokPrecU := 6;
   end;
   '*': begin
     _NextChar;
     if not _Eol and (curLine[fcol]='=') then begin  //*=
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 2;
     end else if not _Eol and (curLine[fcol]='*') then begin  //**
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 6;
     end else begin  //*
       tokType := tkOperator;
+      tokIdent := tiTimes;
       tokPrec := 5;
     end;
   end;
@@ -925,48 +1211,58 @@ begin
     if not _Eol and (curLine[fcol]='/') then begin  //Comment
       repeat _NextChar until _Eol;
       tokType := tkComment;
+      tokIdent := tiOthers;
     end else if not _Eol and (curLine[fcol]='=') then begin // /=
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 2;
     end else begin  // /
       tokType := tkOperator;
+      tokIdent := tiDiv;
       tokPrec := 5;
     end;
   end;
   '\': begin  //Not Pascal standard operators.
     _NextChar;
     tokType := tkOperator;
+    tokIdent := tiOthers;
     tokPrec := 5;
   end;
   '.': begin  //Not Pascal standard operators.
     _NextChar;
     tokType := tkOperator;
+    tokIdent := tiDot;
     tokPrec := 6;
   end;
   '=': begin
     _NextChar;
     tokType := tkOperator;
+    tokIdent := tiOthers;
     tokPrec := 3;
   end;
   '@','^': begin  //Special operators
     _NextChar;
     tokType := tkOperator;
+    tokIdent := tiOthers;
     tokPrec := 6;
-    tokPrecU := 6;
+    //tokPrecU := 6;
   end;
   '>': begin
     _NextChar;
     if not _Eol and (curLine[fcol] = '=') then begin  // >=
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '>') then begin  //SHR
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 5;
     end else begin  //>
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 3;
     end;
   end;
@@ -975,28 +1271,39 @@ begin
     if not _Eol and (curLine[fcol] in ['=','>']) then begin  //<=, <>
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '<') then begin  //SHL
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 5;
     end else begin  //<
       tokType := tkOperator;
+      tokIdent := tiOthers;
       tokPrec := 3;
     end;
   end;
+  ',': begin
+    _NextChar;
+    tokType := tkSymbol;
+    tokIdent := tiComma;
+  end;
   ';': begin
     _NextChar;
-    tokType := tkExpDelim;
+    tokType := tkSymbol;
+    tokIdent := tiSemic;
   end;
   ':': begin
     _NextChar;
     if _ReadChar = '=' then begin  //:=
       _NextChar;
       tokType := tkOperator;
+      tokIdent := tiAssign;
       tokPrec := 2;
     end else begin  // :
-      tokType := tkOthers;
+      tokType := tkSymbol;
+      tokIdent := tiColon;
     end;
   end;
   '(': begin
@@ -1013,13 +1320,21 @@ begin
         _NextChar;
       end;
       tokType := tkComment;
-    end else begin
-      tokType := tkOthers;
+      tokIdent := tiOthers;
+    end else begin  // (
+      tokType := tkSymbol;
+      tokIdent := tiParOpen;
     end;
   end;
-  ')',',','[',']': begin
+  ')': begin
     _NextChar;
-    tokType := tkOthers;
+    tokType := tkSymbol;
+    tokIdent := tiParClos;
+  end;
+  '[',']': begin
+    _NextChar;
+    tokType := tkSymbol;
+    tokIdent := tiOthers;
   end;
   '''': begin
     repeat inc(fcol); until _Eol or (curline[fcol] = '''');
@@ -1029,6 +1344,7 @@ begin
       _NextChar;  //Go to next character
     end;
     tokType := tkString;
+    tokIdent := tiOthers;
   end;
   '#': begin
     _NextChar;
@@ -1039,6 +1355,7 @@ begin
       while not _Eol and (curline[fcol] in ['0'..'9']) do inc(fcol);
     end;
     tokType := tkChar;
+    tokIdent := tiOthers;
   end;
   '{': begin
     _NextChar;
@@ -1052,6 +1369,7 @@ begin
         _NextChar;  //Go to next character
       end;
       tokType := tkDirective;
+      tokIdent := tiOthers;
     end else begin
       //Multiline comment
       repeat _NextChar;
@@ -1062,11 +1380,13 @@ begin
         _NextChar;  //Go to next character
       end;
       tokType := tkComment;
+      tokIdent := tiOthers;
     end;
   end;
   else
     //Unkmown token.
     tokType := tkNull;
+    tokIdent := tiOthers;
     _NextChar;
   end;
   exit(false);
@@ -1134,7 +1454,8 @@ begin
   c.col0    := col0;
   c.tokType := tokType;
   c.tokPrec := tokPrec;
-  c.tokPrecU:= tokPrecU;
+  c.tokIdent:= tokIdent;
+  //c.tokPrecU:= tokPrecU;
 end;
 procedure TContext.SetContextState(const c: TContextState);
 begin
@@ -1149,7 +1470,8 @@ begin
   col0    := c.col0;
   tokType := c.tokType;
   tokPrec := c.tokPrec;
-  tokPrecU:= c.tokPrecU;
+  tokIdent:= c.tokIdent;
+  //tokPrecU:= c.tokPrecU;
 end;
 procedure TContext.SaveContextState;
 //Guarda el estado actual del lexer en la variable interna "fLexerState".
@@ -1463,7 +1785,7 @@ begin
   {$endif}
   curCtx.SetSource(lins);     //Inicia con archivo contenido en TStrings
   curCtx.fileSrc :=  filSrc;  //Guarda nombre de archivo, solo como referencia.
-  //actualiza token actual
+  //Actualiza token actual
   token := curCtx.ReadToken;  //lee el token
   tokType := curCtx.tokType;  //lee atributo
 end;
@@ -1502,7 +1824,6 @@ begin
   curCtx := nil;    //Por si acaso
   idCount := 0;   //Inicia contador
 end;
-
 function TAleLexer.OpenContextFrom(filePath: string): boolean;
 {Abre un contexto con el archivo indicado. Si lo logra abrir, devuelve TRUE.}
 var
@@ -1596,7 +1917,7 @@ begin
       ReturnToPrevContext(curCtx.autoRemove);  //Retorna al contexto padre.
     end;
   end;
-  //actualiza token actual
+  //Actualiza información del token actual
   token := curCtx.ReadToken;    //lee el token
   tokType := curCtx.tokType;  //lee atributo
 end;
