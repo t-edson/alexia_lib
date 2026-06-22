@@ -213,7 +213,7 @@ type  //Definición de tipos
   );
   //Identifcador de tokens
   TTokenIdent = (
-    tiOTHER   ,  //Not identified.
+    tiOTHER    ,  //Not identified.
     //Keywords
     tiARRAY    ,  //Keyword "ARRAY"
     tiASM      ,  //Keyword "ASM"
@@ -270,9 +270,15 @@ type  //Definición de tipos
     tiDIV      ,  //Operator "/"
     tiIDIV     ,  //Operator "DIV"
     tiDOT      ,  //Operator "."
+    tiEQUAL    ,  //Operator "="
+    tiGREAT    ,  //Operator ">"
+    tiGREAT_E  ,  //Operator ">="
     tiIN       ,  //Operator "IN"
+    tiLESS     ,  //Operator "<"
+    tiLESS_E   ,  //Operator "<="
     tiMINUS    ,  //Operator "-"
     tiMOD      ,  //Operator "MOD"
+    tiNOT_EQ   ,  //Operator "<>"
     tiNOT      ,  //Operator "NOT"
     tiOR       ,  //Operator "OR"
     tiPLUS     ,  //Operator "+"
@@ -453,6 +459,29 @@ resourcestring
   MSG_ERRORS  = 'Errors'        ;   //Plural
 
 implementation
+
+function TokenKindToString(Kind: TTokenKind): string;
+begin
+  case Kind of
+    tkNull      : Result := 'tkNull';
+    tkEol       : Result := 'tkEol';
+    tkSymbol    : Result := 'tkSymbol';
+    tkSpace     : Result := 'tkSpace';
+    tkIdentifier: Result := 'tkIdentifier';
+    tkLitNumber : Result := 'tkLitNumber';
+    tkString    : Result := 'tkString';
+    tkComment   : Result := 'tkComment';
+    tkOperator  : Result := 'tkOperator';
+    tkDirective : Result := 'tkDirective';
+    tkBlkDelim  : Result := 'tkBlkDelim';
+    tkChar      : Result := 'tkChar';
+    tkKeyword   : Result := 'tkKeyword';
+    tkDirDelim  : Result := 'tkDirDelim';
+    tkOthers    : Result := 'tkOthers';
+    else          Result := 'tkUnknown';
+  end;
+end;
+
 { TMessageManager }
 function TMessageManager.txtNWarnings: String;
 begin
@@ -1240,7 +1269,7 @@ begin
   '=': begin
     _NextChar;
     tokType := tkOperator;
-    tokIdent := tiOTHER;
+    tokIdent := tiEQUAL;
     tokPrec := 3;
   end;
   '@','^': begin  //Special operators
@@ -1255,34 +1284,39 @@ begin
     if not _Eol and (curLine[fcol] = '=') then begin  // >=
       _NextChar;
       tokType := tkOperator;
-      tokIdent := tiOTHER;
+      tokIdent := tiGREAT_E;
       tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '>') then begin  //SHR
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
       tokPrec := 5;
-    end else begin  //>
+    end else begin  // >
       tokType := tkOperator;
-      tokIdent := tiOTHER;
+      tokIdent := tiGREAT;
       tokPrec := 3;
     end;
   end;
   '<': begin
     _NextChar;
-    if not _Eol and (curLine[fcol] in ['=','>']) then begin  //<=, <>
+    if not _Eol and (curLine[fcol] = '=') then begin  //<=
       _NextChar;
       tokType := tkOperator;
-      tokIdent := tiOTHER;
+      tokIdent := tiLESS_E;
+      tokPrec := 3;
+    end else if not _Eol and (curLine[fcol] = '>') then begin  // <>
+      _NextChar;
+      tokType := tkOperator;
+      tokIdent := tiNOT_EQ;
       tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '<') then begin  //SHL
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
       tokPrec := 5;
-    end else begin  //<
+    end else begin  // <
       tokType := tkOperator;
-      tokIdent := tiOTHER;
+      tokIdent := tiLESS;
       tokPrec := 3;
     end;
   end;
