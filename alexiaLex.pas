@@ -270,6 +270,7 @@ type  //Definición de tipos
     tiDIV      ,  //Operator "/"
     tiIDIV     ,  //Operator "DIV"
     tiDOT      ,  //Operator "."
+    tiDOTDOT   ,  //Operator ".."
     tiEQUAL    ,  //Operator "="
     tiGREAT    ,  //Operator ">"
     tiGREAT_E  ,  //Operator ">="
@@ -1262,9 +1263,15 @@ begin
   end;
   '.': begin  //Not Pascal standard operators.
     _NextChar;
-    tokType := tkOperator;
-    tokIdent := tiDOT;
-    tokPrec := 6;
+    if not _Eol and (curLine[fcol]='.') then begin  // ..
+      _NextChar;
+      tokType := tkSymbol;
+      tokIdent := tiDOTDOT;
+    end else begin   // .
+      tokType := tkOperator;
+      tokIdent := tiDOT;
+      tokPrec := 6;
+    end;
   end;
   '=': begin
     _NextChar;
