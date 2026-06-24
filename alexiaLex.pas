@@ -204,7 +204,6 @@ type  //Definición de tipos
     tkOperator ,  //Operators
     tkDirective,  //Directives
 //    tkAsm      ,  //
-//    tkExpDelim ,  //Expression delimiter ";"
     tkBlkDelim ,  //Block delimiter
     tkChar     ,  //
     tkKeyword  ,  //Reserved words
@@ -285,7 +284,10 @@ type  //Definición de tipos
     tiPLUS     ,  //Operator "+"
     tiSHL      ,  //Operator "SHL"
     tiSHR      ,  //Operator "SHR"
-    tiMULT       //Operator "*"
+    tiMULT     ,  //Operator "*"
+    //Literals
+    tiLitNumbI ,  //Literal numérico entero
+    tiLitNumbF    //Literal numérico decimal
   );
 
   { TContextState }
@@ -833,25 +835,39 @@ begin
     //Leaves (frow, fcol) in the begin of the next token.
   end;
   '0'..'9': begin
+    tokType := tkLitNumber;  //Es un literal numérico.
     repeat
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0'..'9']);
-    tokType := tkLitNumber;
-    tokIdent := tiOTHER;
+    //Puede seguir "."
+    if not _Eol and (curLine[fcol]='.') then begin
+      //Sigue punto
+      Inc(fcol);  //Tomamos el punto
+      tokIdent := tiLitNumbI;
+      //Pueden seguir decimales
+      while not _Eol and (curline[fcol] in ['0'..'9']) do begin
+        Inc(fcol);
+      end;
+      //Podría seguir exponente: e+20, e-3
+
+    end else begin
+      //No sigue punto.
+      tokIdent := tiLitNumbI;
+    end;
   end;
   '$': begin
     repeat
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0'..'9','A'..'F','a'..'f']);
     tokType := tkLitNumber;
-    tokIdent := tiOTHER;
+    tokIdent := tiLitNumbI;
   end;
   '%': begin
     repeat
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0','1']);
     tokType := tkLitNumber;
-    tokIdent := tiOTHER;
+    tokIdent := tiLitNumbI;
   end;
   'A','a': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
@@ -1188,7 +1204,7 @@ begin
   '+': begin
     _NextChar;
     if not _Eol and (curLine[fcol]='=') then begin  // +=
-      _NextChar;
+      Inc(fcol);
       tokType := tkOperator;
       tokIdent := tiOTHER;
       tokPrec := 2;
