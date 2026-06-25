@@ -810,6 +810,7 @@ function TContext.DecodeNext: boolean;
 
 var
   iden: String;
+  haveSign: Boolean;
 begin
   if _Eof then begin
     tokType := tkNull;
@@ -843,13 +844,35 @@ begin
     if not _Eol and (curLine[fcol]='.') then begin
       //Sigue punto
       Inc(fcol);  //Tomamos el punto
-      tokIdent := tiLitNumbI;
+      //Verificamos si sigue el número, o sino, lo cortamos antes del punto, porque puede
+      //que se trate del token ".."
+      if _Eol or not (curline[fcol] in ['0'..'9']) then begin
+        //No siguen números. Retrocedemos hasta antes del ".".
+        Dec(fcol);
+      end;
+      tokIdent := tiLitNumbF;  //Definitivamente es un decimal
       //Pueden seguir decimales
       while not _Eol and (curline[fcol] in ['0'..'9']) do begin
         Inc(fcol);
       end;
       //Podría seguir exponente: e+20, e-3
-
+      haveSign := False;
+      if not _Eol and (curline[fcol] in ['e','E']) then begin
+        inc(fcol);
+        //Opcional
+        if not _Eol and (curline[fcol] in ['+', '-']) then begin
+          haveSign := True;
+          inc(fcol);
+        end;
+        if _Eol or not (curline[fcol] in ['0'..'9']) then begin
+          //No siguen números. Retrocedemos hasta antes del "e".
+          Dec(fcol);
+          if haveSign then Dec(fcol);
+        end;
+        while not _Eol and (curline[fcol] in ['0'..'9']) do begin
+          Inc(fcol);
+        end;
+      end;
     end else begin
       //No sigue punto.
       tokIdent := tiLitNumbI;
