@@ -264,8 +264,9 @@ type  //Definición de tipos
     tiBRACK_OP ,  //Symbol "["
     tiBRACK_CL ,  //Symbol "]"
     //Operators
-    tiAnd      ,  //Operator "AND"
+    tiAND      ,  //Operator "AND"
     tiASSIGN   ,  //Operator ":="
+    tiATSIGN   ,  //Operator "@"
     tiDIV      ,  //Operator "/"
     tiIDIV     ,  //Operator "DIV"
     tiDOT      ,  //Operator "."
@@ -278,13 +279,14 @@ type  //Definición de tipos
     tiLESS_E   ,  //Operator "<="
     tiMINUS    ,  //Operator "-"
     tiMOD      ,  //Operator "MOD"
+    tiMULT     ,  //Operator "*"
     tiNOT_EQ   ,  //Operator "<>"
     tiNOT      ,  //Operator "NOT"
     tiOR       ,  //Operator "OR"
+    tiPOINTER  ,  //Operator "^"
     tiPLUS     ,  //Operator "+"
     tiSHL      ,  //Operator "SHL"
     tiSHR      ,  //Operator "SHR"
-    tiMULT     ,  //Operator "*"
     //Literals
     tiLitNumbI ,  //Literal numérico entero
     tiLitNumbF    //Literal numérico decimal
@@ -898,7 +900,7 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if iden = 'AND' then begin
       tokType := tkOperator;
-      tokIdent := tiAnd;
+      tokIdent := tiAND;
       tokPrec := 5;
     end else if iden = 'ARRAY' then begin
       tokType := tkKeyword;
@@ -1318,10 +1320,17 @@ begin
     tokIdent := tiEQUAL;
     tokPrec := 3;
   end;
-  '@','^': begin  //Special operators
+  '@': begin
     _NextChar;
     tokType := tkOperator;
-    tokIdent := tiOTHER;
+    tokIdent := tiATSIGN;
+    tokPrec := 6;
+    //tokPrecU := 6;
+  end;
+  '^': begin
+    _NextChar;
+    tokType := tkOperator;
+    tokIdent := tiPOINTER;
     tokPrec := 6;
     //tokPrecU := 6;
   end;
