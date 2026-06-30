@@ -266,7 +266,7 @@ type  //Definición de tipos
     //Operators
     tiAND      ,  //Operator "AND"
     tiASSIGN   ,  //Operator ":="
-    tiATSIGN   ,  //Operator "@"
+    tiADDRESS  ,  //Operator "@"
     tiDIV      ,  //Operator "/"
     tiIDIV     ,  //Operator "DIV"
     tiDOT      ,  //Operator "."
@@ -1323,7 +1323,7 @@ begin
   '@': begin
     _NextChar;
     tokType := tkOperator;
-    tokIdent := tiATSIGN;
+    tokIdent := tiADDRESS;
     tokPrec := 6;
     //tokPrecU := 6;
   end;
