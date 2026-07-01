@@ -1,5 +1,7 @@
-{Pascal lexer, using the language defined in the compilers PicPas and P65pas.
-                                          Created by Tito Hinostroza  08/03/2020
+{Fast Pascal lexer, implemented to be used in the compilers PicPas and P65pas.
+This unit includes a Message Manager (TMessageManager) to be used in generating errors and
+warnings.
+Created by Tito Hinostroza  08/03/2020.
 }
 {$DEFINE DEBUG}
 unit alexiaLex;
@@ -182,14 +184,6 @@ type  //Definición de tipos
     TC_TXT      //Text type context.
   );
 
-  //Primary location for elements
-  { TODO : ¿Debe estar aquí? Formalmente esta clasific. pertenece al nivel de elementos. }
-  TElemLocation = (
-                locMain,       //En el programa principal.
-                locInterface,  //En INTERFACE de una unidad.
-                locImplement   //En IMPLEMENTATION de una unidad.
-  );
-
   //Tipos de tokens
   TTokenKind = (
     //Pascal Lexer token
@@ -308,7 +302,6 @@ type  //Definición de tipos
     col0    : integer;
     tokType : TTokenKind;  //Token kind
     tokIdent: TTokenIdent; //Token identifier
-    tokPrec : integer;     //Precedence when "tokType" is "tkOperator".
   end;
 type  //Clase "TContext"
 
@@ -326,9 +319,6 @@ type  //Clase "TContext"
     //Information for current token
     tokType  : TTokenKind;  //Current token kind.
     tokIdent : TTokenIdent; //Token identifier
-    tokPrec  : integer;     //Precedence when "tokType" is "tkOperator".
-    //tokPrecU : integer;    //Precedence when "tokType" is "tkOperator" and operator can be used as unary operator.
-    //The rest of the state are defined by TScanner: frow, fcol, curLine, ...
   public  //Control for current position
     procedure GetContextState(out c: TContextState);
     procedure SetContextState(const c: TContextState);
@@ -444,11 +434,6 @@ type  //Lexer TAleLexer
    {$ENDIF}
   public    //Errors and warnings
     msg: TMessageManager;        //Referencia al gestor de mensajes
-    //Variables
-    curLocation: TElemLocation;  {Current location for scan. This tells the compiler
-                                  where it's scanning. It useful because some declarations
-                                  have to interpret in different way according to the
-                                  location.}
   public  //Initialization
     constructor Create(msg0: TMessageManager);
     destructor Destroy; override;
@@ -797,19 +782,9 @@ end;
 function TContext.DecodeNext: boolean;
 {Decode the token in the current position, indicated by (frow, fcol), and returns:
  - Token type in "tokType".
- - Token precedence in "tokPrec", when "tokType" is "tkOperator".
  - Start of next token in (frow, fcol).
  - Value TRUE if the current line has changed.
-
- Token precedence is the common in Pascal:
- 6)    ~, not, unary "+", unary "-", @, **  (high precedence)
- 5)    *, /, div, mod, and, shl, shr, &
- 4)    |, !, +, -, or, xor
- 3)    =, <>, <, <=, >, >=, in
- 2)    :=, +=, -=, *=, /=  (low precedence)
-
 }
-
 var
   iden: String;
   haveSign: Boolean;
@@ -901,7 +876,6 @@ begin
     if iden = 'AND' then begin
       tokType := tkOperator;
       tokIdent := tiAND;
-      tokPrec := 5;
     end else if iden = 'ARRAY' then begin
       tokType := tkKeyword;
       tokIdent := tiARRAY;
@@ -956,7 +930,6 @@ begin
     if iden = 'DIV' then begin
       tokType := tkOperator;
       tokIdent := tiIDIV;
-      tokPrec := 5;
     end else if iden = 'DESTRUCTOR' then begin
       tokType := tkKeyword;
       tokIdent := tiDESTRUC;
@@ -1014,7 +987,6 @@ begin
     if (iden = 'IN') then begin
       tokType := tkOperator;
       tokIdent := tiIN;
-      tokPrec := 3;
     end else if iden = 'IF' then begin
       tokType := tkKeyword;
       tokIdent := tiIF;
@@ -1048,7 +1020,6 @@ begin
     if (iden = 'MOD') then begin
       tokType := tkOperator;
       tokIdent := tiMOD;
-      tokPrec := 5;
     end else begin
       tokType := tkIdentifier;
       tokIdent := tiOTHER;
@@ -1060,8 +1031,6 @@ begin
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
     if (iden = 'NOT') then begin
       tokType := tkOperator;
-      //tokPrec := 6;
-      //tokPrecU := 6;
       tokIdent := tiNOT;
     end else if iden = 'NIL' then begin
       tokType := tkKeyword;
@@ -1090,7 +1059,6 @@ begin
     end else if (iden = 'OR') then begin
       tokType := tkOperator;
       tokIdent := tiOR;
-      tokPrec := 4;
     end else begin
       tokType := tkIdentifier;
       tokIdent := tiOTHER;
@@ -1214,7 +1182,6 @@ begin
     if (iden = 'XOR') then begin
       tokType := tkOperator;
       tokIdent := tiXOR;
-      tokPrec := 4;
     end else begin
       tokType := tkIdentifier;
       tokIdent := tiOTHER;
@@ -1232,12 +1199,9 @@ begin
       Inc(fcol);
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 2;
     end else begin   // +
       tokType := tkOperator;
       tokIdent := tiPLUS;
-      tokPrec := 4;
-      //tokPrecU := 6;
     end;
   end;
   '-': begin
@@ -1246,20 +1210,15 @@ begin
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 2;
     end else begin   // -
       tokType := tkOperator;
       tokIdent := tiMINUS;
-      tokPrec := 4;
-      //tokPrecU := 6;
     end;
   end;
   '~': begin
     _NextChar;
     tokType := tkOperator;
     tokIdent := tiOTHER;
-    tokPrec := 4;
-    //tokPrecU := 6;
   end;
   '*': begin
     _NextChar;
@@ -1267,16 +1226,13 @@ begin
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 2;
     end else if not _Eol and (curLine[fcol]='*') then begin  //**
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 6;
     end else begin  //*
       tokType := tkOperator;
       tokIdent := tiMULT;
-      tokPrec := 5;
     end;
   end;
   '/': begin
@@ -1289,18 +1245,15 @@ begin
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 2;
     end else begin  // /
       tokType := tkOperator;
       tokIdent := tiDIV;
-      tokPrec := 5;
     end;
   end;
   '\': begin  //Not Pascal standard operators.
     _NextChar;
     tokType := tkOperator;
     tokIdent := tiOTHER;
-    tokPrec := 5;
   end;
   '.': begin  //Not Pascal standard operators.
     _NextChar;
@@ -1311,28 +1264,22 @@ begin
     end else begin   // .
       tokType := tkOperator;
       tokIdent := tiDOT;
-      tokPrec := 6;
     end;
   end;
   '=': begin
     _NextChar;
     tokType := tkOperator;
     tokIdent := tiEQUAL;
-    tokPrec := 3;
   end;
   '@': begin
     _NextChar;
     tokType := tkOperator;
     tokIdent := tiADDRESS;
-    tokPrec := 6;
-    //tokPrecU := 6;
   end;
   '^': begin
     _NextChar;
     tokType := tkOperator;
     tokIdent := tiPOINTER;
-    tokPrec := 6;
-    //tokPrecU := 6;
   end;
   '>': begin
     _NextChar;
@@ -1340,16 +1287,13 @@ begin
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiGREAT_E;
-      tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '>') then begin  //SHR
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 5;
     end else begin  // >
       tokType := tkOperator;
       tokIdent := tiGREAT;
-      tokPrec := 3;
     end;
   end;
   '<': begin
@@ -1358,21 +1302,17 @@ begin
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiLESS_E;
-      tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '>') then begin  // <>
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiNOT_EQ;
-      tokPrec := 3;
     end else if not _Eol and (curLine[fcol] = '<') then begin  //SHL
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiOTHER;
-      tokPrec := 5;
     end else begin  // <
       tokType := tkOperator;
       tokIdent := tiLESS;
-      tokPrec := 3;
     end;
   end;
   ',': begin
@@ -1391,7 +1331,6 @@ begin
       _NextChar;
       tokType := tkOperator;
       tokIdent := tiASSIGN;
-      tokPrec := 2;
     end else begin  // :
       tokType := tkSymbol;
       tokIdent := tiCOLON;
@@ -1549,9 +1488,7 @@ begin
   c.row0    := row0;
   c.col0    := col0;
   c.tokType := tokType;
-  c.tokPrec := tokPrec;
   c.tokIdent:= tokIdent;
-  //c.tokPrecU:= tokPrecU;
 end;
 procedure TContext.SetContextState(const c: TContextState);
 begin
@@ -1565,9 +1502,7 @@ begin
   row0    := c.row0;
   col0    := c.col0;
   tokType := c.tokType;
-  tokPrec := c.tokPrec;
   tokIdent:= c.tokIdent;
-  //tokPrecU:= c.tokPrecU;
 end;
 procedure TContext.SaveContextState;
 //Guarda el estado actual del lexer en la variable interna "fLexerState".
