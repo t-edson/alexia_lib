@@ -197,12 +197,11 @@ type  //Definición de tipos
     tkComment  ,  //Comment. Multi-line token.
     tkOperator ,  //Operators
     tkDirective,  //Directives
-//    tkAsm      ,  //
     tkBlkDelim ,  //Block delimiter
-    tkChar     ,  //
+    tkChar     ,  //Caracter individual: #$41
     tkKeyword  ,  //Reserved words
     tkDirDelim ,  //Delimitador de directiva. Usado solo para directivas.
-    tkOthers      //
+    tkOthers      //Otro token no agrupado
   );
   //Identifcador de tokens
   TTokenIdent = (
@@ -221,6 +220,7 @@ type  //Definición de tipos
     tiDOWNTO   ,  //Keyword "DOWNTO"
     tiELSE     ,  //Keyword "ELSE"
     tiELSIF    ,  //Keyword "ELSIF"
+    tiEXIT     ,  //Keyword "EXIT"
     tiEND      ,  //Keyword "END"
     tiFALSE    ,  //Keyword "FALSE"
     tiFOR      ,  //Keyword "FOR"
@@ -241,6 +241,7 @@ type  //Definición de tipos
     tiSET      ,  //Keyword "SET"
     tiTHEN     ,  //Keyword "THEN"
     tiTO       ,  //Keyword "TO"
+    tiTRUE     ,  //Keyword "TRUE"
     tiTYPE     ,  //Keyword "TYPE"
     tiUNIT     ,  //Keyword "UNIT"
     tiUNTIL    ,  //Keyword "UNTIL"
@@ -957,6 +958,9 @@ begin
     end else if iden='ELSIF' then begin
       tokType := tkBlkDelim;
       tokIdent := tiELSIF;
+    end else if iden='EXIT' then begin
+      tokType := tkIdentifier;   //Formalmente, no es una palabra reservada.
+      tokIdent := tiEXIT;
     end else begin
       tokType := tkIdentifier;
       tokIdent := tiOTHER;
@@ -1122,6 +1126,9 @@ begin
     end else if (iden = 'TO') then begin
       tokType := tkKeyword;
       tokIdent := tiTO;
+    end else if (iden = 'TRUE') then begin
+      tokType := tkKeyword;
+      tokIdent := tiTRUE;
     end else if (iden = 'TYPE') then begin
       tokType := tkKeyword;
       tokIdent := tiTYPE;
