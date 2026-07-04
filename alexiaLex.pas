@@ -2007,7 +2007,6 @@ Initialization
   srcPosNull.row := -1;
   srcPosNull.col := -1;
   srcPosNull.idCtx := -1;
-//srcPos.idCtx := 0;
 
 end.
 

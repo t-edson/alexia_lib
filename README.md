@@ -1,9 +1,9 @@
 # alexia_lib
-Pascal library that includes a lexical analyzer for creating compilers.
+Pascal library for creating lexical analyzers in Pascal.
 
 # 1. Descripción
 
-Alexia es una librería de clases en el dialecto de Free Pascal, que sirve como apoyo primario en la creación de compiladores o intérpretes.
+Alexia es una librería de clases en el dialecto de Free Pascal, que sirve como apoyo primario en la creación de compiladores o intérpretes en Pascal.
 
 Incluye la definición de diferentes clases que, entre otras facilidades, permite crear los siguientes elementos:
 
@@ -13,13 +13,13 @@ Incluye la definición de diferentes clases que, entre otras facilidades, permit
 
 Inicialmente, esta librería estaba incluida en el compilador P65Pas, pero se ha separado, para manejarse como una librería independiente y reutilizable en otros proyectos.
 
-El analizador léxico está definido inicialmente para reconocer el lenguaje Pascal, pero puede ser configurado para manejar lenguajes diferentes. La definición de un nuevo lenguaje se hace por código. No tiee soporte para expresiones regulares.
+El analizador léxico está definido, primariamente, para reconocer el lenguaje Pascal, pero puede ser configurado para manejar lenguajes diferentes. La definición de un nuevo lenguaje se hace por código. No se tiene soporte para expresiones regulares.
 
 Características:
 
 * Es una librería ligera, que se compone de una sola unidad de Pascal.
 * Está diseñada para una exploración rápida del código fuente. 
-* Permite configurar (por código) el lenguaje que se va a analizar.
+* Permite configurar (por código) un lenguaje alternativo para analizar.
 * Permite navegación y retorno seguro para explorar archivos secundarios desde el archivo principal.
 * Incluye funciones para guardar y restaurar el estado del lexer durante la exploración.
 * Incluye una clase adicional para la gestión de mensajes desde el lexer o desde el compilador.
@@ -388,7 +388,7 @@ Para que el contexto hijo sepa a donde retornar al terminar la exploración, se 
     ...
   public
     idCtx    : integer;     //Unique identifier for the context.
-    retPos   : TAleLexertate;  //Return position to parent context.
+    retPos   : TContextState;  //Return position to parent context.
     ...
   end;
 ``` 
@@ -449,23 +449,23 @@ Para guardar posición y estado (y así poder retomar una exploración previa, e
 
 Como en el diseño de TAleLexer se considera la posibilidad de moverse libremente entre contextos, se hace necesario guardar el estado de un contexto antes de hacer el cambio y retornar ese estado al retornar al contexto previo.
 
-Para almacenar el estado de un contexto se ha creado el registro TAleLexertate:
+Para almacenar el estado de un contexto se ha creado el registro TContextState:
 
-  TAleLexertate = record
+``` Pascal
+  TContextState = record
     idCtx   : integer;     //Id for the context.
     //Attributes of TScannerState
     frow    : integer;
     fcol    : integer;
     curLine : string;
     curSize : integer;
-    //Additional atributes.
+    //Atributes of TContext
     row0    : integer;
     col0    : integer;
-    tokType : TTokenKind;
-    tokPrec : integer;
-    tokPrecU: integer;    //Precedence when "tokType" is "tkOperator" and operator can be used as unary operator.
+    tokType : TTokenKind;  //Token kind
+    tokIdent: TTokenIdent; //Token identifier
   end;
-
+```
 Esta información relativa a un contexto es todo lo que se necesita para poder suspender una exploración, pasar a explorar otro contexto (o el mismo en otra ubicación) y poder retornar luego, de forma segura, al contexto inicial.
 
 La clase *TAleLexer* incluye métodos para lectura y escritura del estado del lexer:
@@ -505,4 +505,4 @@ Pero como *TAleLexer* ha sido diseñado para ser utilizado también dentro de un
 
 En esta forma de trabajo, *TAleLexer* puede leer el código fuente directamente desde memoria, a través de un objeto TStringList.
 
-Para habilitar esta facilidad, se debe implementar el evento *OnRequireFileString* que es llamado cada vez que el lexer requiere cargar un archivo desde disco. Dentro del manejador del evento se puede verificar si el archivo solicitado se tiene ya cargado en memoria, y, de ser así, se le pasa el acceso a través de un TStringList.
+Para habilitar esta facilidad, se debe implementar el evento *OnRequireFileString* que es llamado cada vez que el lexer requiere cargar un archivo desde disco. Dentro del manejador del evento se puede verificar si el archivo solicitado se tiene ya cargado en memoria, y, de ser así, se le pasa el acceso a través de un *TStringList*.
