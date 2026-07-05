@@ -223,10 +223,12 @@ type  //Definición de tipos
     tiEXIT     ,  //Keyword "EXIT"
     tiEND      ,  //Keyword "END"
     tiFALSE    ,  //Keyword "FALSE"
+    tiFINALIZA ,  //Keyword "FINALIZATION"
     tiFOR      ,  //Keyword "FOR"
     tiFUNCT    ,  //Keyword "FUNCTION"
     tiIF       ,  //Keyword "IF"
     tiIMPLEM   ,  //Keyword "IMPLEMENTATION"
+    tiINITIALI ,  //Keyword "INITIALIZATION"
     tiINTERF   ,  //Keyword "INTERFACE"
     tiLABEL    ,  //Keyword "LABEL"
     tiNIL      ,  //Keyword "NIL"
@@ -973,6 +975,9 @@ begin
     if iden='FALSE' then begin
       tokType := tkKeyword;
       tokIdent := tiFALSE;
+    end else if (iden = 'FINALIZATION') then begin
+      tokType := tkKeyword;
+      tokIdent := tiFINALIZA;
     end else if (iden = 'FOR') then begin
       tokType := tkKeyword;
       tokIdent := tiFOR;
@@ -997,6 +1002,9 @@ begin
     end else if iden = 'IMPLEMENTATION' then begin
       tokType := tkKeyword;
       tokIdent := tiIMPLEM;
+    end else if iden = 'INITIALIZATION' then begin
+      tokType := tkKeyword;
+      tokIdent := tiINITIALI;
     end else if iden = 'INTERFACE' then begin
       tokType := tkKeyword;
       tokIdent := tiINTERF;
