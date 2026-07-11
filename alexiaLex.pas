@@ -225,6 +225,7 @@ type  //Definición de tipos
     tiFALSE    ,  //Keyword "FALSE"
     tiFINALIZA ,  //Keyword "FINALIZATION"
     tiFOR      ,  //Keyword "FOR"
+    tiFORWARD  ,  //Keyword "FORWARD"
     tiFUNCT    ,  //Keyword "FUNCTION"
     tiIF       ,  //Keyword "IF"
     tiIMPLEM   ,  //Keyword "IMPLEMENTATION"
@@ -981,6 +982,9 @@ begin
     end else if (iden = 'FOR') then begin
       tokType := tkKeyword;
       tokIdent := tiFOR;
+    end else if (iden = 'FORWARD') then begin
+      tokType := tkKeyword;
+      tokIdent := tiFORWARD;
     end else if (iden = 'FUNCTION') then begin
       tokType := tkKeyword;
       tokIdent := tiFUNCT;
