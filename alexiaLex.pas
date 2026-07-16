@@ -207,8 +207,10 @@ type  //Definición de tipos
   TTokenIdent = (
     tiOTHER    ,  //Not identified.
     //Keywords
+    tiABSOLUTE ,  //Keyword "ABSOLUTE"
     tiARRAY    ,  //Keyword "ARRAY"
     tiASM      ,  //Keyword "ASM"
+    tiASSEMBLER,  //Keyword "ASSEMBLER"
     tiBEGIN    ,  //Keyword "BEGIN"
     tiBREAK    ,  //Keyword "BREAK"
     tiCASE     ,  //Keyword "CASE"
@@ -223,14 +225,18 @@ type  //Definición de tipos
     tiEXIT     ,  //Keyword "EXIT"
     tiEND      ,  //Keyword "END"
     tiFALSE    ,  //Keyword "FALSE"
+    tiFILE     ,  //Keyword "FILE"
     tiFINALIZA ,  //Keyword "FINALIZATION"
     tiFOR      ,  //Keyword "FOR"
     tiFORWARD  ,  //Keyword "FORWARD"
     tiFUNCT    ,  //Keyword "FUNCTION"
+    tiGOTO     ,  //Keyword "GOTO"
     tiIF       ,  //Keyword "IF"
     tiIMPLEM   ,  //Keyword "IMPLEMENTATION"
     tiINITIALI ,  //Keyword "INITIALIZATION"
+    tiINLINE   ,  //Keyword "INLINE"
     tiINTERF   ,  //Keyword "INTERFACE"
+    tiINTERRUP ,  //Keyword "INTERRUPT"
     tiLABEL    ,  //Keyword "LABEL"
     tiNIL      ,  //Keyword "NIL"
     tiOBJECT   ,  //Keyword "OBJECT"
@@ -252,7 +258,6 @@ type  //Definición de tipos
     tiVAR      ,  //Keyword "VAR"
     tiWHILE    ,  //Keyword "WHILE"
     tiWITH     ,  //Keyword "WITH"
-    tiXOR      ,  //Keyword "XOR"
     //Symbols
     tiSEMIC    ,  //Symbol ";"
     tiCOLON    ,  //Symbol ":"
@@ -285,9 +290,12 @@ type  //Definición de tipos
     tiPLUS     ,  //Operator "+"
     tiSHL      ,  //Operator "SHL"
     tiSHR      ,  //Operator "SHR"
+    tiXOR      ,  //Operator "XOR"
     //Literals
+    tiLitString,  //Literal string
     tiLitNumbI ,  //Literal numérico entero
-    tiLitNumbF    //Literal numérico decimal
+    tiLitNumbF ,  //Literal numérico decimal
+    tiIdentif     //Identificadores
   );
 
   { TContextState }
@@ -877,7 +885,10 @@ begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     //Can be optimized using a first verification by size of the string and not comparing the first letter.
     iden := Upcase(copy(curLine, col0, (fcol-col0)));
-    if iden = 'AND' then begin
+    if iden = 'ABSOLUTE' then begin
+      tokType := tkKeyword;
+      tokIdent := tiABSOLUTE;
+    end else if iden = 'AND' then begin
       tokType := tkOperator;
       tokIdent := tiAND;
     end else if iden = 'ARRAY' then begin
@@ -886,9 +897,12 @@ begin
     end else if iden = 'ASM' then begin
       tokType := tkKeyword;
       tokIdent := tiASM;
+    end else if iden = 'ASSEMBLER' then begin
+      tokType := tkKeyword;
+      tokIdent := tiASSEMBLER;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'B','b': begin
@@ -903,7 +917,7 @@ begin
       tokIdent := tiBREAK;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'C','c': begin
@@ -924,7 +938,7 @@ begin
       tokIdent := tiCONTINUE;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'D','d': begin
@@ -945,7 +959,7 @@ begin
       tokIdent := tiDOWNTO;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'E','e': begin
@@ -963,10 +977,10 @@ begin
       tokIdent := tiELSIF;
     end else if iden='EXIT' then begin
       tokType := tkIdentifier;   //Formalmente, no es una palabra reservada.
-      tokIdent := tiEXIT;
+      tokIdent := tiEXIT;    //Pero si la identificamos
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'F','f': begin
@@ -976,6 +990,9 @@ begin
     if iden='FALSE' then begin
       tokType := tkKeyword;
       tokIdent := tiFALSE;
+    end else if iden='FILE' then begin
+      tokType := tkKeyword;
+      tokIdent := tiFILE;
     end else if (iden = 'FINALIZATION') then begin
       tokType := tkKeyword;
       tokIdent := tiFINALIZA;
@@ -990,7 +1007,19 @@ begin
       tokIdent := tiFUNCT;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
+    end;
+  end;
+  'G','g': begin
+    repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+    //Can be optimized using a first verification by size of the string and not comparing the first letter.
+    iden := Upcase(copy(curLine, col0, (fcol-col0)));
+    if iden='GOTO' then begin
+      tokType := tkKeyword;
+      tokIdent := tiGOTO;
+    end else begin
+      tokType := tkIdentifier;
+      tokIdent := tiIdentif;
     end;
   end;
   'I','i': begin
@@ -1009,12 +1038,18 @@ begin
     end else if iden = 'INITIALIZATION' then begin
       tokType := tkKeyword;
       tokIdent := tiINITIALI;
+    end else if iden = 'INLINE' then begin
+      tokType := tkKeyword;
+      tokIdent := tiINLINE;
     end else if iden = 'INTERFACE' then begin
       tokType := tkKeyword;
       tokIdent := tiINTERF;
+    end else if iden = 'INTERRUPT' then begin
+      tokType := tkKeyword;
+      tokIdent := tiINTERRUP;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'L','l': begin
@@ -1026,7 +1061,7 @@ begin
       tokIdent := tiLABEL;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'M','m': begin
@@ -1038,7 +1073,7 @@ begin
       tokIdent := tiMOD;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'N','n': begin
@@ -1053,7 +1088,7 @@ begin
       tokIdent := tiNIL;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'O','o': begin
@@ -1077,7 +1112,7 @@ begin
       tokIdent := tiOR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'P','p': begin
@@ -1092,7 +1127,7 @@ begin
       tokIdent := tiPROGRAM;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'R','r': begin
@@ -1107,7 +1142,7 @@ begin
       tokIdent := tiREPEAT;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'S','s': begin
@@ -1125,7 +1160,7 @@ begin
       tokIdent := tiSHR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'T','t': begin
@@ -1146,7 +1181,7 @@ begin
       tokIdent := tiTYPE;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'U','u': begin
@@ -1164,7 +1199,7 @@ begin
       tokIdent := tiUSES;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'V','v': begin
@@ -1176,7 +1211,7 @@ begin
       tokIdent := tiVAR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'W','w': begin
@@ -1191,7 +1226,7 @@ begin
       tokIdent := tiWITH;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
   'X','x': begin
@@ -1203,14 +1238,14 @@ begin
       tokIdent := tiXOR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiOTHER;
+      tokIdent := tiIdentif;
     end;
   end;
-  'G','H','J','K','Q','Y','Z','_',
-  'g','h','j','k','q','y','z': begin
+  'H','J','K','Q','Y','Z','_',
+  'h','j','k','q','y','z': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     tokType := tkIdentifier;
-    tokIdent := tiOTHER;
+    tokIdent := tiIdentif;
   end;
   '+': begin
     _NextChar;
@@ -1398,7 +1433,7 @@ begin
       _NextChar;  //Go to next character
     end;
     tokType := tkString;
-    tokIdent := tiOTHER;
+    tokIdent := tiLitString;
   end;
   '#': begin
     _NextChar;
