@@ -109,9 +109,9 @@ El objetivo es que en la implementación de un compilador, no se generen los men
 
 ### 2.1	La clase TScanner
 
-*TScanner* solo implementa las funcionalidades básicas de un analizador léxico, como es la exploración carácter por carácter y las funciones NextChar() y ReadChar(), además de las funciones para detectar el estado del cursor (BOF, EOF, EOL). Se podría decir que *TScanner* es un lexer elemental que no está definido para ningún lenguaje en particular, sino que podría servir de base para crea analizadores orientados a un lenguaje en particular, como lo hace *TContext*.
+*TScanner* solo implementa las funcionalidades básicas de un analizador léxico, como la exploración carácter por carácter y las funciones NextChar() y ReadChar(), además de las funciones para detectar el estado del cursor (BOF, EOF, EOL). Se podría decir que *TScanner* es un lexer elemental que no está definido para ningún lenguaje en particular, sino que podría servir de base para crear analizadores orientados a un lenguaje en particular, como lo hace *TContext*.
 
-En cuanto a almacenamiento del texto fuente, *TScanner* no dispone de contenedores disponibles. Solo se incluye una referencia a un TStrings y una función para asignar esta referencia:
+En cuanto a almacenamiento del texto fuente, *TScanner* no dispone de contenedores propios. Solo se incluye una referencia a un TStrings, y una función para asignar esta referencia:
 
 ``` Pascal
   TScanner = class
@@ -122,9 +122,9 @@ En cuanto a almacenamiento del texto fuente, *TScanner* no dispone de contenedor
     procedure SetText(strList: TStringList);  //Sets the source text.
   end;
 ```
-La implementación de *TScanner* se ha hecho considerando la velocidad como factor más importante. Es por eso que, varias de sus funciones de tipo INLINE, además de ofrecer las versiones “rápidas” de la clase que contienen menos comprobaciones y/o son INLINE.
+La implementación de *TScanner* se ha hecho considerando la velocidad como factor de diseño más importante. Es por eso que, varias de sus funciones son de tipo INLINE, además de ofrecer las versiones “rápidas” de la clase que contienen menos comprobaciones y/o son INLINE también.
 
-Sin embargo, *TScanner* no ofrece gran utilidad para una exploración real del código fuente, porque solo realizar exploración carácter por carácter y no identifica tokens en sí. Por eso no existe una función como ReadToken. Lo más cercano sería la función ReadChar():
+Sin embargo, *TScanner* no ofrece gran utilidad para una exploración real del código fuente, porque solo realizar exploración carácter por carácter y no identifica tokens en sí. Por lo tanto, no existe una función como *ReadToken()*. Lo más cercano sería la función *ReadChar()*:
 
 ``` Pascal
   TScanner = class
@@ -136,7 +136,7 @@ Sin embargo, *TScanner* no ofrece gran utilidad para una exploración real del c
   end;
 ```
 
-El funcionamiento de *TScanner* es simple. Después de inicializar la referencia “curLines” con SetText(), se debe iniciar el cursor “frow, fcol” con las coordenadas iniciales del texto (1,1). Luego, para leer el carácter actual, se usa ReadChar() y para pasar al siguiente carácter se usa NextChar(). Al llegar al fin de la línea, NextChar() pasa a explorar la siguiente línea.
+El funcionamiento de *TScanner* es simple. Después de inicializar la referencia *curLines* con SetText(), se debe iniciar el cursor “frow, fcol” con las coordenadas iniciales del texto (1,1). Luego, para leer el carácter actual, se usa ReadChar() y para pasar al siguiente carácter se usa NextChar(). Al llegar al fin de la línea, NextChar() pasa a explorar la siguiente línea.
 
 Para detectar el estado del “lexer", se usa algunas de las funciones de estado de *TScanner*:
 
@@ -155,11 +155,11 @@ Para detectar el estado del “lexer", se usa algunas de las funciones de estado
   end;
 ```
 
-Para completar la funcionalidad de *TScanner* se usa una clase derivada llamada *TContext*. El nombre *TContext* se mantiene desde las primeras versiones en donde diseñé un analizador léxico que manejara diversos archivos fuente y considerara a cada fuente de datos como un “contexto” diferente, es decir, una entidad con información adicional sobre su contenido o posición.
+Para completar la funcionalidad de *TScanner* se usa una clase derivada llamada *TContext*. El nombre *TContext* se mantiene desde las primeras versiones del analizador léxico, que ya incluían el manejo de diversos archivos fuente de entrada o cadenas de texto. A cada fuente de entrada le llamé “contexto” y se define como una entidad con información adicional sobre su contenido o posición.
 
 ### 2.2	La clase TContext
 
-Precisamente la clase *TContext* complementa la funcionalidad de “TScanner” de la siguiente forma:
+Precisamente la clase *TContext* complementa la funcionalidad de *TScanner* de la siguiente forma:
 
 * Incluye un contenedor de texto para la exploración.
 * Incluye funciones de mayor nivel de exploración.
@@ -180,7 +180,7 @@ Además de estas facilidades, *TContext* incluye diversas formas de definir la f
     ...
   end;
 ```
-Una de las características de *TContext*, es que maneja ya un lenguaje a nivel léxico. Es decir, que puede reconocer los elementos léxicos (tokens) de un lenguaje, que en este caso es Pascal. Para ello se ha definido un tipo enumerado con todos los tipos de token que se necesitan en este compilador:
+Una de las características de *TContext*, es que maneja ya un lenguaje a nivel léxico. Es decir, que puede reconocer los elementos léxicos (tokens) de un lenguaje, que es Pascal, pro defecto. Para ello se ha definido un tipo enumerado con todos los tipos de token que se necesitan en este compilador:
 
 ``` Pascal
   TTokenKind = (
@@ -220,11 +220,11 @@ Para apoyar el reconocimiento de tokens, se define dentro de *TContext* dos atri
 
 Estos atributos vendrían a indicar la posición, dentro del texto fuente, del inicio del token actual, mientras que los atributos TScanner.frow y TScanner.fcol vendrían a ser la posición del siguiente token.
 
-Para leer los valores entre (ro0, col0) y (frow, fcol) se hace uso del método ReadToken().  Para avanzar al siguiente token, se hace uso de Next().
+Para leer los valores entre (ro0, col0) y (frow, fcol) se hace uso del método *ReadToken()*.  Para avanzar al siguiente token, se usa *Next()*.
 
 ### 2.2.1	Cambio de sintaxis 
 
-El reconocimiento de tokens en TContext se realiza en TContext.DecodeNext(), pero, como este método conoce solo los tokens de Pascal, se podría pensar que TContext solo reconoce a Pascal como lenguaje fuente (salvo otros lenguajes que se podrían tolerar por similitud en los tokens), pero TContext incluye un  “callback” llamado *OnDecodeNext*.
+El reconocimiento de tokens en TContext se realiza en *TContext.DecodeNext()*, pero, como este método conoce solo los tokens de Pascal, se podría pensar que TContext solo reconoce a Pascal como lenguaje fuente (salvo otros lenguajes que se podrían tolerar por similitud en los tokens), pero *TContext* incluye un  “callback” llamado *OnDecodeNext*.
 
 Mediante el uso del evento *OnDecodeNext*, se puede enchufar una función que haga un reconocimiento diferente de tokens, de forma que se podría dar soporte a otro lenguaje de programación.
 
@@ -233,7 +233,7 @@ Para configurar una nueva sintaxis, se debe definir una rutina de reconocimiento
 ``` Pascal
   lexer.OnDecodeNext := @DecodeNext;
 ```
-La estructura de DecodeNext() debe ser similar a la de TContext.DecodeNext().
+La estructura de DecodeNext() debe ser similar a la de *TContext.DecodeNext()*.
 
 *TContext* nos ofrece todo lo que podemos necesitar para explorar un archivo o texto fuente, usando el lenguaje predefinido o alguno personalizado, además de manejar bien la asignación del texto fuente, y tener todas las funciones necesarias para la exploración y reconocimiento de tokens. Sin embargo, *TContext* carece de una funcionalidad importante que requieren algunos compiladores, y es la capacidad para poder manejar diversos archivos fuente y poder moverse libremente entre ellos.
 
@@ -270,18 +270,18 @@ classDiagram
     TContext <|-- TScanner : herencia
   ```
 
-TAleLexer  tiene la capacidad de explorar texto desde diversos archivos fuente, usando una instancia de TContext para cada uno de ellos.
+TAleLexer  tiene la capacidad de explorar texto desde diversos archivos fuente, usando una instancia de *TContext* para cada uno de ellos.
 
 #### 2.3.1	Exploración de texto
 
-La exploración de un código fuente desde TAleLexer se hace de forma similar a como se haría TContext, con la salvedad de que TAleLexer es un analizador léxico multicontexto. 
+La exploración de un código fuente desde TAleLexer se hace de forma similar a como se haría *TContext*, con la salvedad de que TAleLexer es un analizador léxico multicontexto. 
 
 Para iniciar la exploración se debe crear primero el contexto principal, usando alguna de las funciones de creación de contextos:
 
 ``` Pascal
   TAleLexer = class
     ...
-  protected  //Context manage
+  protected  //Administración de contextos
     ctxList: TContextList;   //Lista de contextos de entrada
     function AddContext: TContext;
     procedure NewContextFromText(txt: string; fileSrc: String);
@@ -315,7 +315,7 @@ El método TAleLexer.SkipWhites() tiene también la capacidad de moverse entre c
 
 Los atributos “token” and “tokType” constituyen una diferencia con respecto a TContext. Estos atributos almacenan información actualizada con respecto al token actual y se actualizan con cada llamada a Next() o a SkipWhites() o a SkipWHitesNoEOL(). 
 
-El atributo “token” almacena el texto del token actual y el atributo “tokType” almacena el tipo de token actual. Estos atributos se mantienen en variables para poder leerlas en cualquier momento sin pérdida de eficiencia, a diferencia de TContext, que requiere llamar a TContext.ReadToken() para obtener el token apuntado actualmente.
+El atributo “token” almacena el texto del token actual y el atributo “tokType” almacena el tipo de token actual. Estos atributos se mantienen en variables para poder leerlas en cualquier momento sin pérdida de eficiencia, a diferencia de TContext, que requiere llamar a *TContext.ReadToken()* para obtener el token apuntado actualmente.
 
 #### 2.3.2	Exploración de múltiples contextos
 
@@ -499,10 +499,10 @@ SaveContextState() y RestoreContextState() permiten implementar la misma funcion
 
 #### 2.3.5	Apertura eficiente de contextos 
 
-Por lo general, todos los contextos que usa *TAleLexer* se leen a partir de un archivo de texto y la carga de ese contexto nuevo en el contenedor *ctxList* implicaría leer ese archivo fuente desde disco usando TAleLexer.NewContextFromFile(). 
+Por lo general, todos los contextos que usa *TAleLexer* se leen a partir de un archivo de texto y la carga de ese contexto nuevo en el contenedor *ctxList* implicaría leer ese archivo fuente desde disco usando *TAleLexer.NewContextFromFile()*.
 
 Pero como *TAleLexer* ha sido diseñado para ser utilizado también dentro de una IDE, en donde los archivos fuente pueden estar cargados en un editor de la IDE, se puede lograr un nivel de optimización adicional, evitando acceder al archivo desde disco, si la IDE lo tiene ya cargado.
 
-En esta forma de trabajo, *TAleLexer* puede leer el código fuente directamente desde memoria, a través de un objeto TStringList.
+En esta forma de trabajo, *TAleLexer* puede leer el código fuente directamente desde memoria, a través de un objeto *TStringList*.
 
 Para habilitar esta facilidad, se debe implementar el evento *OnRequireFileString* que es llamado cada vez que el lexer requiere cargar un archivo desde disco. Dentro del manejador del evento se puede verificar si el archivo solicitado se tiene ya cargado en memoria, y, de ser así, se le pasa el acceso a través de un *TStringList*.

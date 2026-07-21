@@ -2009,8 +2009,12 @@ end;
 procedure TAleLexer.GotoEOL;
 {Move lexer cursor to the end of the current line.}
 begin
-  curCtx.setEOL;   //Move fcol to end of the line.
-  curCtx.Next;     //Update current token to tkEOL
+  while curCtx.tokType <> tkEol do begin
+    curCtx.Next;     //Update current token to tkEOL
+  end;
+  //Actualiza información del token actual
+  token := curCtx.ReadToken;    //lee el token
+  tokType := curCtx.tokType;  //lee atributo
 end;
 {$IFDEF debug_mode}
 procedure TAleLexer.ShowContexts;
