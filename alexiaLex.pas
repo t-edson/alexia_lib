@@ -803,9 +803,11 @@ var
 begin
   if _Eof then begin
     tokType := tkNull;
+    tokIdent := tiOTHER;
     exit(false);
   end else if _Eol then begin
     tokType := tkEol;
+    tokIdent := tiOTHER;
     if _LastLine then begin
       //Cannot advance to a NextChar line. Keep position (EOF)
     end else begin
@@ -1426,12 +1428,14 @@ begin
     tokIdent := tiBRACK_CL;
   end;
   '''': begin
-    repeat inc(fcol); until _Eol or (curline[fcol] = '''');
-    if _Eol then begin
-      onErrorScan('Unclosed string.');  //Don't stop scanning
-    end else begin
-      _NextChar;  //Go to next character
-    end;
+    repeat
+      repeat inc(fcol); until _Eol or (curline[fcol] = '''');
+      if _Eol then begin
+        onErrorScan('Unclosed string.');  //Don't stop scanning
+      end else begin
+        _NextChar;  //Go to next character
+      end;
+    until _Eol or (curLine[fcol]<>'''');  //A double "'" is not delimiter
     tokType := tkString;
     tokIdent := tiLitString;
   end;
