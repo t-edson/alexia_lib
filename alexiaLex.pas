@@ -295,7 +295,7 @@ type  //Definición de tipos
     tiLitString,  //Literal string
     tiLitNumbI ,  //Literal numérico entero
     tiLitNumbF ,  //Literal numérico decimal
-    tiIdentif     //Identificadores
+    tiIDENTIF     //Identificadores
   );
 
   { TContextState }
@@ -398,9 +398,9 @@ type  //Lexer TAleLexer
   private
     idCount  : integer;        //Contador para obtener el índice de un contexto
     procedure AleLexerErrorScan(txt: string);
-  public  //Events
+  public    //Events
     OnNewLine: procedure(lin: string) of object;
-  public //Information for current context
+  public    //Information for current context
     curCtx   : TContext;       //referencia al contexto de entrada actual
     //Control for state
     function GetCtxState: TContextState;
@@ -412,19 +412,19 @@ type  //Lexer TAleLexer
     function GetMsgInfo(txt: string; const srcPos: TSrcPos): TMsgInfo; inline;
     function GetMsgInfoE(const txt: string): TMsgInfo;
     function GetMsgInfoE(const txt: string; const srcPos: TSrcPos): TMsgInfo;
-  public //Information for any context
+  public    //Information for any context
     function ctxId(fileSrc: string): integer;
     function ctxFile(idCtx: integer): string;
     function ctxFile(const srcPos: TSrcPos): string;
     function ctxFileName(const srcPos: TSrcPos): string;
     function ctxFileDir(const srcPos: TSrcPos): string;
-  protected  //Context manage
+  protected //Context management
     ctxList: TContextList;   //Lista de contextos de entrada
     function AddContext: TContext;
     procedure NewContextFromFile(filSrc: String; out notFound: boolean);
     procedure NewContextFromTStrings(lins: Tstrings; filSrc: String);
     procedure ReturnToPrevContext(remove: boolean);
-  public
+  public    //Context management
     {Indica que se va a acceder a un archivo para crear un contexto, pero se está
     preguntando si se tiene un Stringlist, con los datos ya cargados del archivo, para
     evitar tener que abrir nuevamente al archivo desde disco.}
@@ -432,7 +432,7 @@ type  //Lexer TAleLexer
     procedure ClearContexts;      //Deletes all contexts.
     procedure NewContextFromText(txt: string; fileSrc: String);
     function OpenContextFrom(filePath: string): boolean;
-  public //Scan functions
+  public    //Scan functions
     token    : string;                //Current Token.
     tokType  : TTokenKind;            //Current Token type.
     function tokL: string; inline;    //Lower case current token.
@@ -442,14 +442,14 @@ type  //Lexer TAleLexer
     procedure SkipWhitesNoEOL;        //Skip only spaces.
     procedure Next;                   //Go to the next token.
     procedure GotoEOL;                //Go to the EOL position.
-  public  //Context debugging
+  public    //Context debugging
     {$IFDEF debug_mode}
     procedure ShowContexts;
     procedure ShowCurContInformat;
    {$ENDIF}
   public    //Errors and warnings
     msg: TMessageManager;        //Referencia al gestor de mensajes
-  public  //Initialization
+  public    //Initialization
     constructor Create(msg0: TMessageManager);
     destructor Destroy; override;
   end;
@@ -916,11 +916,13 @@ begin
       //Verificamos si sigue el número, o sino, lo cortamos antes del punto, porque puede
       //que se trate del token ".."
       if _Eol or not (curline[fcol] in ['0'..'9']) then begin
-        //No siguen números. Retrocedemos hasta antes del ".".
-        Dec(fcol);
+        //No siguen números. Podría ser "..".
+        Dec(fcol);  //Retrocedemos hasta antes del ".".
+        tokIdent := tiLitNumbI;   //Asumimos número entero
+        Exit(false);
       end;
+      //Siguen decimales
       tokIdent := tiLitNumbF;  //Definitivamente es un decimal
-      //Pueden seguir decimales
       while not _Eol and (curline[fcol] in ['0'..'9']) do begin
         Inc(fcol);
       end;
@@ -982,7 +984,7 @@ begin
       tokIdent := tiASSEMBLER;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'B','b': begin
@@ -997,7 +999,7 @@ begin
       tokIdent := tiBREAK;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'C','c': begin
@@ -1018,7 +1020,7 @@ begin
       tokIdent := tiCONTINUE;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'D','d': begin
@@ -1039,7 +1041,7 @@ begin
       tokIdent := tiDOWNTO;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'E','e': begin
@@ -1060,7 +1062,7 @@ begin
       tokIdent := tiEXIT;    //Pero si la identificamos
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'F','f': begin
@@ -1087,7 +1089,7 @@ begin
       tokIdent := tiFUNCT;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'G','g': begin
@@ -1099,7 +1101,7 @@ begin
       tokIdent := tiGOTO;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'I','i': begin
@@ -1129,7 +1131,7 @@ begin
       tokIdent := tiINTERRUP;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'L','l': begin
@@ -1141,7 +1143,7 @@ begin
       tokIdent := tiLABEL;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'M','m': begin
@@ -1153,7 +1155,7 @@ begin
       tokIdent := tiMOD;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'N','n': begin
@@ -1168,7 +1170,7 @@ begin
       tokIdent := tiNIL;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'O','o': begin
@@ -1192,7 +1194,7 @@ begin
       tokIdent := tiOR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'P','p': begin
@@ -1207,7 +1209,7 @@ begin
       tokIdent := tiPROGRAM;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'R','r': begin
@@ -1222,7 +1224,7 @@ begin
       tokIdent := tiREPEAT;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'S','s': begin
@@ -1240,7 +1242,7 @@ begin
       tokIdent := tiSHR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'T','t': begin
@@ -1261,7 +1263,7 @@ begin
       tokIdent := tiTYPE;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'U','u': begin
@@ -1279,7 +1281,7 @@ begin
       tokIdent := tiUSES;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'V','v': begin
@@ -1291,7 +1293,7 @@ begin
       tokIdent := tiVAR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'W','w': begin
@@ -1306,7 +1308,7 @@ begin
       tokIdent := tiWITH;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'X','x': begin
@@ -1318,14 +1320,14 @@ begin
       tokIdent := tiXOR;
     end else begin
       tokType := tkIdentifier;
-      tokIdent := tiIdentif;
+      tokIdent := tiIDENTIF;
     end;
   end;
   'H','J','K','Q','Y','Z','_',
   'h','j','k','q','y','z': begin
     repeat inc(fcol); until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
     tokType := tkIdentifier;
-    tokIdent := tiIdentif;
+    tokIdent := tiIDENTIF;
   end;
   '+': begin
     _NextChar;
