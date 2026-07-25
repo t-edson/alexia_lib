@@ -331,6 +331,8 @@ type  //Clase "TContext"
     //Information for current token
     tokType  : TTokenKind;  //Current token kind.
     tokIdent : TTokenIdent; //Token identifier
+    //String token when tokIdent := tiLitString;
+    strToken : string;     //**** Not currently saved in State
   public  //Control for current position
     procedure GetContextState(out c: TContextState);
     procedure SetContextState(const c: TContextState);
@@ -343,6 +345,7 @@ type  //Clase "TContext"
     intLines : TStringList;  {Internal containers for text, when not specified an external
                              TStringList. Always created.}
   private  //Scan functions
+    procedure ScanStringOrChar; inline;
     function DecodeNext: boolean;
   public  //Scan functions
     OnDecodeNext: function: boolean of object;
@@ -461,6 +464,15 @@ resourcestring
   MSG_ERRORS  = 'Errors'        ;   //Plural
 
 implementation
+const
+  //Arreglo para conversiones rápidas de valores hexadecimales
+  HexVals: array['0'..'f'] of Byte = (
+    0,1,2,3,4,5,6,7,8,9,   // '0'..'9'
+    0,0,0,0,0,0,0,         // ':'..'@'
+    10,11,12,13,14,15,     // 'A'..'F'
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 'G'..'`'
+    10,11,12,13,14,15      // 'a'..'f'
+  );
 
 function TokenKindToString(Kind: TTokenKind): string;
 begin
@@ -789,6 +801,72 @@ procedure TContext.SkipWhitesNoEOL;
 begin
   while toktype = tkSpace do begin
     DecodeNext;
+  end;
+end;
+procedure TContext.ScanStringOrChar;
+{Reconoce construcciones de cadena como: #32'cadena'#32#64'otra_cadena'}
+var
+  CharCode, col1, fcol1: Integer;
+begin
+  strToken := '';
+  // Bucle principal: reconocer #número y 'cadena'
+  while not _Eol do begin
+    if curLine[fcol] = '#' then begin           //CASO 1: #número
+      _NextChar;  // Saltar '#'
+      CharCode := 0;  //Prepara acumulación
+      fcol1 := fcol;   //Save position
+      // Verificar si es hexadecimal: #$20
+      if curLine[fcol] = '$' then begin
+        NextChar;  // Saltar '$'
+        while not _Eol and (curLine[fcol] in ['0'..'9', 'A'..'F', 'a'..'f']) do begin
+          CharCode := CharCode * 16 + HexVals[curLine[fcol]];
+          inc(fcol);
+          if CharCode>255 then begin
+            onErrorScan('Invalid ASCII code.');
+            exit;
+          end;
+        end;
+      end else begin
+        // Leer número decimal
+        while not _Eol and (curLine[fcol] in ['0'..'9']) do begin
+          CharCode := CharCode * 10 + Ord(curLine[fcol]) - 48;
+          inc(fcol);
+          if CharCode>255 then begin
+            onErrorScan('Invalid ASCII code.');
+            exit;
+          end;
+        end;
+      end;
+      if fcol > fcol1 then begin
+        strToken := strToken + Chr(CharCode);  //Acumula cadena
+      end else begin
+        onErrorScan('Illegal char constant.');
+        exit;
+      end;
+    end else if curLine[fcol] = '''' then begin //CASO 2: 'cadena'
+      repeat
+        //Busca delimitador
+        col1 := fcol+1;      //Guarda posición inicial de la cadena
+        repeat inc(fcol); until _Eol or (curline[fcol] = '''');
+        if _Eol then begin
+          onErrorScan('Unclosed string.');  //Don't stop scanning
+        end else begin
+          _NextChar;  //Go to next character
+        end;
+        if _Eol then Break;  //No more chars
+        if curLine[fcol]='''' then begin    //A double "'" is not delimiter
+          //Copiamos la cadena en bloque hasta el apóstrofo.
+          strToken := strToken + copy(curLine, col1, (fcol-col1));
+        end else begin  //End of string
+          //Se encontró el delimitador
+          strToken := strToken + copy(curLine, col1, (fcol-col1-1));
+          break;
+        end;
+      until _Eol;
+    end else begin
+      //No es "#" ni "'", salimos del bucle.
+      Break;
+    end;
   end;
 end;
 function TContext.DecodeNext: boolean;
@@ -1427,28 +1505,10 @@ begin
     tokType := tkSymbol;
     tokIdent := tiBRACK_CL;
   end;
-  '''': begin
-    repeat
-      repeat inc(fcol); until _Eol or (curline[fcol] = '''');
-      if _Eol then begin
-        onErrorScan('Unclosed string.');  //Don't stop scanning
-      end else begin
-        _NextChar;  //Go to next character
-      end;
-    until _Eol or (curLine[fcol]<>'''');  //A double "'" is not delimiter
+  '''','#': begin
+    ScanStringOrChar;   //Update "strToken"
     tokType := tkString;
     tokIdent := tiLitString;
-  end;
-  '#': begin
-    _NextChar;
-    if _ReadChar = '$' then begin
-      _NextChar;
-      while not _Eol and (curline[fcol] in ['0'..'9','A'..'F','a'..'f']) do inc(fcol);
-    end else  begin
-      while not _Eol and (curline[fcol] in ['0'..'9']) do inc(fcol);
-    end;
-    tokType := tkChar;
-    tokIdent := tiOTHER;
   end;
   '{': begin
     _NextChar;
@@ -1513,7 +1573,9 @@ var
 begin
   if tokType in [tkNull, tkSpace, tkEol, tkComment] then begin
     //For optimization, returns empty in these token types.
-    exit('');
+    Exit('');
+  end else if tokType = tkString then begin
+    Exit(strToken);   //Los literales de cadena se leen aquí
   end;
   if row0 = frow then begin  //It's a single line token
     exit( copy(curLine, col0, (fcol-col0)) );
