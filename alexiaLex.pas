@@ -295,7 +295,8 @@ type  //Definición de tipos
     tiLitString,  //Literal string
     tiLitNumbI ,  //Literal numérico entero
     tiLitNumbF ,  //Literal numérico decimal
-    tiIDENTIF     //Identificadores
+    tiIDENTIF  ,  //Identificadores
+    tiCOMMENT     //Comentarios
   );
 
   { TContextState }
@@ -1376,7 +1377,7 @@ begin
     if not _Eol and (curLine[fcol]='/') then begin  //Comment
       repeat _NextChar until _Eol;
       tokType := tkComment;
-      tokIdent := tiOTHER;
+      tokIdent := tiCOMMENT;
     end else if not _Eol and (curLine[fcol]='=') then begin // /=
       _NextChar;
       tokType := tkOperator;
@@ -1486,7 +1487,7 @@ begin
         _NextChar;
       end;
       tokType := tkComment;
-      tokIdent := tiOTHER;
+      tokIdent := tiCOMMENT;
     end else begin  // (
       tokType := tkSymbol;
       tokIdent := tiPAREN_OP;
@@ -1535,7 +1536,7 @@ begin
         _NextChar;  //Go to next character
       end;
       tokType := tkComment;
-      tokIdent := tiOTHER;
+      tokIdent := tiCOMMENT;
     end;
   end;
   else
@@ -1573,7 +1574,7 @@ var
   tmp: String;
   line: string;
 begin
-  if tokType in [tkNull, tkSpace, tkEol, tkComment] then begin
+  if tokType in [tkNull, tkSpace, tkEol, tkComment, tkKeyword] then begin
     //For optimization, returns empty in these token types.
     Exit('');
   end else if tokType = tkString then begin
