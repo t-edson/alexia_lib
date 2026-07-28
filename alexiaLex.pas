@@ -243,6 +243,7 @@ type  //Definición de tipos
     tiOF       ,  //Keyword "OF"
     tiOPERAT   ,  //Keyword "OPERATOR"
     tiON       ,  //Keyword "ON"
+    tiOUT      ,  //Keyword "OUT"
     tiPROCED   ,  //Keyword "PROCEDURE"
     tiPROGRAM  ,  //Keyword "PROGRAM"
     tiRECORD   ,  //Keyword "RECORD"
@@ -325,7 +326,7 @@ type  //Clase "TContext"
   TContext = class(TScanner)
   private
     fLexerState: TContextState;  //almacenamiento temporal
-  public  //State of the scanner
+  public   //Position and State of the scanner
     //Position for start of current token
     row0     : integer;    //From 1 to "nlin". ?
     col0     : integer;    //From 1 to "curSize". Set to 0 at the beginning. ?
@@ -334,28 +335,30 @@ type  //Clase "TContext"
     tokIdent : TTokenIdent; //Token identifier
     //String token when tokIdent := tiLitString;
     strToken : string;     //**** Not currently saved in State
-  public  //Control for current position
+    //Current cursor position.
+    property row: integer read frow;
+    property col: integer read fcol;
+  public   //Control for the state
     procedure GetContextState(out c: TContextState);
     procedure SetContextState(const c: TContextState);
     procedure SaveContextState;    //Guarda el estado actual del lexer
     procedure RestoreContextState; //Restaura el estado actual del lexer
-    //Current cursor position.
-    property row: integer read frow;
-    property col: integer read fcol;
-  public  //Containers for content
+  public   //Containers for content
     intLines : TStringList;  {Internal containers for text, when not specified an external
                              TStringList. Always created.}
   private  //Scan functions
     procedure ScanStringOrChar; inline;
     function DecodeNext: boolean;
-  public  //Scan functions
+  public   //Scan functions
     OnDecodeNext: function: boolean of object;
+    procedure ScanIdentifier;  inline;   //Explora identificadores
     function Next: boolean;      //Pasa al siguiente token
     function ReadToken: string;  //Returns the current token
     function tokTypeStr: string;
     procedure SkipWhites;
     procedure SkipWhitesNoEOL;
-  public
+    function MatchToken(const token: string): Boolean;
+  public   //Context information
     idCtx    : integer;     //Unique identifier for the context.
     retPos   : TContextState; //Return position to parent context.
     typ      : tTypCon;     //Context type.
@@ -366,9 +369,9 @@ type  //Clase "TContext"
     autoRemove: boolean;    {Indica que, al finalizar la exploración, se debe eliminar
                             este contexto. Solo es válido cuando se activa "autoReturn".}
     function ReadSource: string;    //Lee el contenido del contexto en un string
-  public  //Error generation
+  public   //Error generation
     onErrorScan: procedure(msg: string) of object;  //Generates scanner error
-  public  //Manage of the Pre-error.
+  public   //Manage of the Pre-error.
     {The Pre-error is a technique that affect the generation of errors in this context.
     When it's activated, it means that if an error is generated when scannig this context,
     the error will be located at the position indicated by "PreErrPosit", instead of the
@@ -380,7 +383,7 @@ type  //Clase "TContext"
     PreErrorMsg: string;    {Mensaje previo al mensaje de error, cuando el errror se
                              genere en este contexto. Como se va a concatenar con otro
                              mensaje de error, debería terminar en ": " o ". ".}
-  public  //Métodos de inicialización
+  public   //Métodos de inicialización
     function IniCont:Boolean;
     procedure StartScan;
     procedure SetSource(txt : string);   //Fija el contenido del contexto con cadena
@@ -438,7 +441,7 @@ type  //Lexer TAleLexer
     tokType  : TTokenKind;            //Current Token type.
     function tokL: string; inline;    //Lower case current token.
     function atEol: Boolean; inline;  //Detects when lexer is at End of Line.
-    function atEof: Boolean;          //Detects when lexer is at End of File.
+    function atEof: Boolean; inline;  //Detects when lexer is at End of File.
     procedure SkipWhites;             //Skip spaces and Line breaks.
     procedure SkipWhitesNoEOL;        //Skip only spaces.
     procedure Next;                   //Go to the next token.
@@ -474,6 +477,9 @@ const
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 'G'..'`'
     10,11,12,13,14,15      // 'a'..'f'
   );
+var
+  //Arreglo para conversión rápida a mayúscula
+  UpperTable: array[char] of char;
 
 function TokenKindToString(Kind: TTokenKind): string;
 begin
@@ -782,28 +788,48 @@ begin
             (col    = target.col);
 end;
 { TContext }
-function TContext.IniCont: Boolean;
-//Devuelve verdadero si se está al inicio del Contexto (fila 1, columna 1)
+//Control for the state
+procedure TContext.GetContextState(out c: TContextState);
 begin
-  Result := (row = 1) and (col = 1);
+  c.idCtx := idCtx;
+  //Scanner attributes
+  c.frow    := frow;
+  c.fcol    := fcol;
+  c.curLine := curLine;
+  c.curSize := curSize;
+  //Adittional attributes
+  c.row0    := row0;
+  c.col0    := col0;
+  c.tokType := tokType;
+  c.tokIdent:= tokIdent;
 end;
-procedure TContext.SkipWhites;
-//Coge los blancos iniciales, saltos de línea y comentarios del contexto de entrada.
-//Si no encuentra algun blanco al inicio, devuelve falso
+procedure TContext.SetContextState(const c: TContextState);
 begin
-  while toktype in [tkSpace , tkEol, tkComment] do
-  begin
-    DecodeNext;
-  end;
+  //idCtx   := c.idCtx;  Wouldn't be needed.
+  //Scanner attributes
+  frow    := c.frow;
+  fcol    := c.fcol;
+  curLine := c.curLine;
+  curSize := c.curSize;
+  //Adittional attributes
+  row0    := c.row0;
+  col0    := c.col0;
+  tokType := c.tokType;
+  tokIdent:= c.tokIdent;
 end;
-procedure TContext.SkipWhitesNoEOL;
-//Get initial whites from input context. Doesn't consider EOL as white.
-//If not whites are found, returns FALSE.
+procedure TContext.SaveContextState;
+//Guarda el estado actual del lexer en la variable interna "fLexerState".
+//Este estado incluye las coordenadas actuales de lectura en el Lexer.
 begin
-  while toktype = tkSpace do begin
-    DecodeNext;
-  end;
+  GetContextState(fLexerState);
 end;
+procedure TContext.RestoreContextState;
+//Copia el estado del lexer grabado en "fLexerState". Se debe ejecutar siempre
+//después de SaveLexerState().
+begin
+  SetContextState(fLexerState);
+end;
+//Scan functions
 procedure TContext.ScanStringOrChar;
 {Reconoce construcciones de cadena como: #32'cadena'#32#64'otra_cadena'}
 var
@@ -1193,6 +1219,9 @@ begin
     end else if (iden = 'OR') then begin
       tokType := tkOperator;
       tokIdent := tiOR;
+    end else if (iden = 'OUT') then begin
+      tokType := tkKeyword;
+      tokIdent := tiOUT;
     end else begin
       tokType := tkIdentifier;
       tokIdent := tiIDENTIF;
@@ -1547,6 +1576,14 @@ begin
   end;
   exit(false);
 end;
+procedure TContext.ScanIdentifier;
+{Explora hasta el final de un identificador. Se debe llamar después de haber detectado
+el inicio de un identificador. Trabaja con una definición estándar de identificadores.}
+begin
+  repeat
+    inc(fcol);
+  until _Eol or not(curline[fcol] in ['_','a'..'z','A'..'Z','0'..'9']);
+end;
 function TContext.Next: boolean;
 {Decode the token in the current position of the cursor (frow,fcol) and returns:
 - Start of the current token in (row0, col0).
@@ -1599,50 +1636,51 @@ begin
   //Result := GetEnumName(TypeInfo(TTokenKind),Ord(tokType));
   WriteStr(Result, tokType)
 end;
-procedure TContext.GetContextState(out c: TContextState);
+procedure TContext.SkipWhites;
+//Coge los blancos iniciales, saltos de línea y comentarios del contexto de entrada.
+//Si no encuentra algun blanco al inicio, devuelve falso
 begin
-  c.idCtx := idCtx;
-  //Scanner attributes
-  c.frow    := frow;
-  c.fcol    := fcol;
-  c.curLine := curLine;
-  c.curSize := curSize;
-  //Adittional attributes
-  c.row0    := row0;
-  c.col0    := col0;
-  c.tokType := tokType;
-  c.tokIdent:= tokIdent;
+  while toktype in [tkSpace , tkEol, tkComment] do begin
+    DecodeNext;
+  end;
 end;
-procedure TContext.SetContextState(const c: TContextState);
+procedure TContext.SkipWhitesNoEOL;
+//Get initial whites from input context. Doesn't consider EOL as white.
+//If not whites are found, returns FALSE.
 begin
-  //idCtx   := c.idCtx;  Wouldn't be needed.
-  //Scanner attributes
-  frow    := c.frow;
-  fcol    := c.fcol;
-  curLine := c.curLine;
-  curSize := c.curSize;
-  //Adittional attributes
-  row0    := c.row0;
-  col0    := c.col0;
-  tokType := c.tokType;
-  tokIdent:= c.tokIdent;
+  while toktype = tkSpace do begin
+    DecodeNext;
+  end;
 end;
-procedure TContext.SaveContextState;
-//Guarda el estado actual del lexer en la variable interna "fLexerState".
-//Este estado incluye las coordenadas actuales de lectura en el Lexer.
+function TContext.MatchToken(const token: string): Boolean;
+{Indica si el token actual (que debe ser un identificador) es igual al token indicado,
+ignorando la caja.
+La cadena "token" debe ingresarse en mayúscula.
+Hace la comparación rápida sin crear cadenas temporales.}
+var
+  i: Integer;
 begin
-  GetContextState(fLexerState);
+  //Validación rápida
+  if fcol-col0 <> Length(Token) then Exit(False);
+  //Comparación por caracter
+  for i := 1 to Length(Token) do begin
+    if Token[i] <> UpperTable[CurLine[Col0 + i - 1]] then begin
+      Exit(False);
+    end;
+  end;
+  Exit(True);
 end;
-procedure TContext.RestoreContextState;
-//Copia el estado del lexer grabado en "fLexerState". Se debe ejecutar siempre
-//después de SaveLexerState().
-begin
-  SetContextState(fLexerState);
-end;
+//Context information
 function TContext.ReadSource: string;
 //Devuelve el contenido del contexto en una cadena.
 begin
   Result := curLines.text;
+end;
+//Métodos de inicialización
+function TContext.IniCont: Boolean;
+//Devuelve verdadero si se está al inicio del Contexto (fila 1, columna 1)
+begin
+  Result := (row = 1) and (col = 1);
 end;
 procedure TContext.StartScan;
 {Reset the scanner to start working.}
@@ -1656,7 +1694,6 @@ begin
   //Updates the first token.
   Next;
 end;
-//Métodos de inicialización
 procedure TContext.SetSource(txt: string);
 //Fija el contenido del contexto con una cadena. Puede ser de varias líneas.
 begin
@@ -2080,6 +2117,7 @@ procedure TAleLexer.GotoEOL;
 begin
   while curCtx.tokType <> tkEol do begin
     curCtx.Next;     //Update current token to tkEOL
+    if atEof then Break;
   end;
   //Actualiza información del token actual
   token := curCtx.ReadToken;    //lee el token
@@ -2123,10 +2161,14 @@ begin
   inherited Destroy;
 end;
 
+var i: char;
 Initialization
   srcPosNull.row := -1;
   srcPosNull.col := -1;
   srcPosNull.idCtx := -1;
+  //LLena arreglo de conversión a mayúscula
+  for i := #0 to #255 do
+    UpperTable[i] := UpCase(i);
 
 end.
 
