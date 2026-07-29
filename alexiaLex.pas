@@ -980,8 +980,13 @@ begin
     repeat
       inc(fcol);
     until _Eol or not(curline[fcol] in ['0'..'9','A'..'F','a'..'f']);
-    tokType := tkLitNumber;
-    tokIdent := tiLitNumbI;
+    if fcol-col0 = 1 then begin
+      tokType := tkSymbol;
+      tokIdent := tiOTHER;
+    end else begin
+      tokType := tkLitNumber;
+      tokIdent := tiLitNumbI;
+    end;
   end;
   '%': begin
     repeat
