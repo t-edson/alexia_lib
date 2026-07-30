@@ -865,7 +865,7 @@ begin
         end;
       end;
       if fcol > fcol1 then begin
-        strToken := strToken + Chr(CharCode);  //Acumula cadena
+        strToken += Chr(CharCode);  //Acumula cadena
       end else begin
         onErrorScan('Illegal char constant.');
         exit;
@@ -883,10 +883,10 @@ begin
         if _Eol then Break;  //No more chars
         if curLine[fcol]='''' then begin    //A double "'" is not delimiter
           //Copiamos la cadena en bloque hasta el apóstrofo.
-          strToken := strToken + copy(curLine, col1, (fcol-col1));
+          strToken += copy(curLine, col1, (fcol-col1));
         end else begin  //End of string
           //Se encontró el delimitador
-          strToken := strToken + copy(curLine, col1, (fcol-col1-1));
+          strToken += copy(curLine, col1, (fcol-col1-1));
           break;
         end;
       until _Eol;
@@ -1658,8 +1658,8 @@ begin
   end;
 end;
 function TContext.MatchToken(const token: string): Boolean;
-{Indica si el token actual (que debe ser un identificador) es igual al token indicado,
-ignorando la caja.
+{Indica si el token actual (que debe ser un identificador en una sla línea) es igual al
+token indicado, ignorando la caja.
 La cadena "token" debe ingresarse en mayúscula.
 Hace la comparación rápida sin crear cadenas temporales.}
 var
