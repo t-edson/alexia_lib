@@ -198,7 +198,6 @@ type  //Definición de tipos
     tkOperator ,  //Operators
     tkDirective,  //Directives
     tkBlkDelim ,  //Block delimiter
-    tkChar     ,  //Caracter individual: #$41
     tkKeyword  ,  //Reserved words
     tkDirDelim ,  //Delimitador de directiva. Usado solo para directivas.
     tkOthers      //Otro token no agrupado
@@ -495,7 +494,6 @@ begin
     tkOperator  : Result := 'tkOperator';
     tkDirective : Result := 'tkDirective';
     tkBlkDelim  : Result := 'tkBlkDelim';
-    tkChar      : Result := 'tkChar';
     tkKeyword   : Result := 'tkKeyword';
     tkDirDelim  : Result := 'tkDirDelim';
     tkOthers    : Result := 'tkOthers';
