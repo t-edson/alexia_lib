@@ -14,7 +14,7 @@ type  //Gestor de mensajes
   //Used to send messages to the message manager.
   TMsgInfo = object
     txt    : string;   //Message text
-    fname  : string;   //SOurce file
+    fname  : string;   //Source file
     row    : integer;  //Row number
     col    : integer;  //Column number
   end;
@@ -46,7 +46,7 @@ type  //Gestor de mensajes
     //Evento que indica que se ha generado un mensaje (Info, Warning or Error)
     OnMessage: procedure(msgKind: TMessageKind; const msgInfo: TMsgInfo) of object;
     procedure info(const msgInfo: TMsgInfo);
-    procedure info(txt: string);
+    procedure info(const txt: string);
     procedure warn(const msgInfo: TMsgInfo);
     procedure error(const msgInfo: TMsgInfo);
   public  //Manejo de mensajes en cuadros de diálogos
@@ -523,7 +523,7 @@ begin
   inc(nInfos);
   if Assigned(OnMessage) then OnMessage(mkInfo, msgInfo);
 end;
-procedure TMessageManager.info(txt: string);
+procedure TMessageManager.info(const txt: string);
 {Versión simplificada de info().}
 begin
   inc(nInfos);

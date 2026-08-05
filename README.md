@@ -105,6 +105,49 @@ Un gestor de mensajes permite se usa para administrar los mensajes de advertenci
 
 El objetivo es que en la implementación de un compilador, no se generen los mensajes directamente al aplicativo, sino al gestor de mensajes. De modo que luego este gestor de mensajes pueda conectarse con el aplicativo. Esta arquitectura permite eliminar la dependencia entre aplicativo y compilador y facilita la integración del compilador con diversos aplicativos (de consola o con GUI).
 
+En un diseño común, se espera que el gestor de mensajes se declare como un objeto al mismo nivel que el lexer:
+```Pascal
+  ...
+  msg    : TMessageManager;  //Gestor de mensajes
+  lexer  : TAleLexer;        //Analizador léxico
+  ...
+
+  msg    := TMessageManager.Create;
+  lexer  := TAleLexer.Create(msg);
+```
+Luego, el gestor de mensajes debe conectarse con la aplicación a través del evento *OnMessageSys*:
+
+```Pascal
+  msg.OnMessageSys := @msgManagerMessageSys;
+```
+La aplicación deberá decidir cómo mostrar los mensajes, ya sea que se muestren por consola o a través de una GUI.
+
+Para generar mensajes en TMessageManager, se puede llamar a alguna de las funciones que se ofrecen para tal fin:
+
+```Pascal
+TMessageManager = class
+  ... 
+  public  //Manejo de mensajes de consola
+    ... 
+    procedure info(const msgInfo: TMsgInfo);
+    procedure info(const txt: string);
+    procedure warn(const msgInfo: TMsgInfo);
+    procedure error(const msgInfo: TMsgInfo);
+  ...
+end;
+```
+
+La mayoría de procedimientos requiere el uso de un objeto *TMsgInfo* como parámetro. Se usa este objeto porque empaqueta no solo el texto del mensaje sino que permite incluir información sobre posición en un archivo de código fuente:
+
+```Pascal
+  TMsgInfo = object
+    txt    : string;   //Message text
+    fname  : string;   //Source file
+    row    : integer;  //Row number
+    col    : integer;  //Column number
+  end;
+```
+
 ## 2. Clases
 
 ### 2.1	La clase TScanner
@@ -272,6 +315,8 @@ classDiagram
 
 TAleLexer  tiene la capacidad de explorar texto desde diversos archivos fuente, usando una instancia de *TContext* para cada uno de ellos.
 
+Si solo se requiere explorar un archivo o cadena de texto, en una pasada, se puede usar la clase *TContext*, de forma más eficiente.
+
 #### 2.3.1	Exploración de texto
 
 La exploración de un código fuente desde TAleLexer se hace de forma similar a como se haría *TContext*, con la salvedad de que TAleLexer es un analizador léxico multicontexto. 
@@ -344,7 +389,7 @@ El contenedor de contextos en TAleLexer es “ctxList”:
   TContextList = specialize TFPGObjectList<TContext>;
 ``` 
 
-La exploración del archivo principal se hace creando un contexto inicial (TContext), y, cada vez que se necesita explorar un archivo diferente, se crea un contexto nuevo.
+La exploración del archivo principal se hace creando un contexto inicial (*TContext*), y, cada vez que se necesita explorar un archivo diferente, se crea un contexto nuevo.
 
 Los métodos para crear contextos nuevos son los mismos que se usan para crear el contexto principal:
 
@@ -407,11 +452,20 @@ El retorno al contexto padre, al terminar la exploración de un contexto hijo, n
   end;
 ``` 
 
-Cuando se pone “autoReturn” a TRUE, es cuando se habilita la recuperación del contexto anterior, así como su estado, al terminar la exploración de un contexto hijo. Si no se activara “autoReturn”, al terminar la exploración del contexto hijo (condición EOF) ya no se podría leer más tokens, y es casi seguro que la compilación terminara con el error “Unexpected End of file”.
+Cuando se pone “autoReturn” a TRUE, es cuando se habilita la recuperación del contexto anterior, así como su estado, al terminar la exploración de un contexto hijo. Si no se activara “autoReturn”, al terminar la exploración del contexto hijo (condición EOF) ya no se podría leer más tokens, y es casi seguro que la exploración terminará con el error “Unexpected End of file”.
 
 El proceso de retomar el contexto padre se puede apreciar en TAleLexer.SkipWhites() y en TAleLexer.Next().
 
-La bandera “autoRemove” complementa la función de “autoReturn” y permite adicionalmente a la función de autoretorno, eliminar el contexto hijo. Sin embargo, no se recomienda usar esta característica (a pesar de que optimizaría el uso de la memoria) si el programa o compilador necesita retroceder en la exploración hacia alguna posición que pudiera existir en otro contexto y este debe estar abierto o se generaría un error.
+La bandera “autoRemove” complementa la función de “autoReturn” y permite adicionalmente a la función de autoretorno, eliminar el contexto hijo. Sin embargo, no se recomienda usar esta característica (a pesar de que optimizaría el uso de la memoria) si el programa que usa el lexer (como un intérprete o un compilador) necesita retroceder en la exploración hacia alguna posición que pudiera existir en otro contexto y este debe estar abierto o se generaría un error.
+
+Para abrir y cerrar un nuevo contexto, de forma manual (sin "autoremove"), se pueden usar el siguiente par de instrucciones:
+
+```Pascal
+  lex.OpenContextFrom('somefile.pas')  //Crear un nuevo contexto
+  //Explorar el contexto actual.
+  lex.ReturnToPrevContext(false);  //Retorna al contexto padre.
+```
+El parámetro de *ReturnToPrevContext()* indica si se elimina o no el contexto creado, al salir de él.
 
 #### 2.3.3	Posición en un contexto
 
