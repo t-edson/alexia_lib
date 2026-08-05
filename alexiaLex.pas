@@ -426,7 +426,6 @@ type  //Lexer TAleLexer
     function AddContext: TContext;
     procedure NewContextFromFile(filSrc: String; out notFound: boolean);
     procedure NewContextFromTStrings(lins: Tstrings; filSrc: String);
-    procedure ReturnToPrevContext(remove: boolean);
   public    //Context management
     {Indica que se va a acceder a un archivo para crear un contexto, pero se está
     preguntando si se tiene un Stringlist, con los datos ya cargados del archivo, para
@@ -435,6 +434,7 @@ type  //Lexer TAleLexer
     procedure ClearContexts;      //Deletes all contexts.
     procedure NewContextFromText(txt: string; fileSrc: String);
     function OpenContextFrom(filePath: string): boolean;
+    procedure ReturnToPrevContext(remove: boolean);
   public    //Scan functions
     token    : string;                //Current Token.
     tokType  : TTokenKind;            //Current Token type.
@@ -1983,35 +1983,6 @@ begin
   token := curCtx.ReadToken;  //lee el token
   tokType := curCtx.tokType;  //lee atributo
 end;
-procedure TAleLexer.ReturnToPrevContext(remove: boolean);
-{Set the current context to the previous context. The previous context is the context
-that active when the current context was opened. After return to the previous context
-the state es restored too. Is "remove" is set, the current context is deleted from
-"ctxList".}
-var
-  retPos: TContextState;
-begin
-  if ctxList.Count = 0 then begin
-    //No hay contextos abiertos
-    curCtx := nil;   //por si acaso
-    exit;  //no se puede quitar más
-  end;
-  {$ifdef debug_mode}
-  debugln('  -Context deleted:'+ curCtx.arc);
-  {$endif}
-  //Hay al menos un contexto abierto
-  retPos := curCtx.retPos;  //guarda dirección de retorno
-  //ctxList.Delete(ctxList.Count-1);  //elimina contexto superior
-  if remove then ctxList.Remove(curCtx);
-  if ctxList.Count = 0 then begin
-    //No quedan contextos abiertos
-    curCtx := nil;
-  end else begin
-    //Queda al menos un contexto anterior
-    curCtx := ctxList[retPos.idCtx]; //Recover last context
-    SetCtxState(retPos);             //Recover last position
-  end;
-end;
 procedure TAleLexer.ClearContexts;  //Limpia todos los contextos
 begin
   ctxList.Clear;  //Elimina todos los Contextos de entrada
@@ -2046,7 +2017,35 @@ begin
     Result := not notFound;  //El único error es cuando no se encuentra el archivo.
   end;
 end;
-
+procedure TAleLexer.ReturnToPrevContext(remove: boolean);
+{Set the current context to the previous context. The previous context is the context
+that active when the current context was opened. After return to the previous context
+the state es restored too. Is "remove" is set, the current context is deleted from
+"ctxList".}
+var
+  retPos: TContextState;
+begin
+  if ctxList.Count = 0 then begin
+    //No hay contextos abiertos
+    curCtx := nil;   //por si acaso
+    exit;  //no se puede quitar más
+  end;
+  {$ifdef debug_mode}
+  debugln('  -Context deleted:'+ curCtx.arc);
+  {$endif}
+  //Hay al menos un contexto abierto
+  retPos := curCtx.retPos;  //guarda dirección de retorno
+  //ctxList.Delete(ctxList.Count-1);  //elimina contexto superior
+  if remove then ctxList.Remove(curCtx);
+  if ctxList.Count = 0 then begin
+    //No quedan contextos abiertos
+    curCtx := nil;
+  end else begin
+    //Queda al menos un contexto anterior
+    curCtx := ctxList[retPos.idCtx]; //Recover last context
+    SetCtxState(retPos);             //Recover last position
+  end;
+end;
 //Scan functions
 function TAleLexer.tokL: string;
 //Devuelve el token actual, ignorando la caja.
