@@ -48,7 +48,9 @@ type  //Gestor de mensajes
     procedure info(const msgInfo: TMsgInfo);
     procedure info(const txt: string);
     procedure warn(const msgInfo: TMsgInfo);
+    procedure warn(const txt: string);
     procedure error(const msgInfo: TMsgInfo);
+    procedure error(const txt: string);
   public  //Manejo de mensajes en cuadros de diálogos
     procedure msgBox(const txt: string);
     procedure msgWar(const txt: string);
@@ -539,10 +541,32 @@ begin
   inc(nWarns);
   if Assigned(OnMessage) then OnMessage(mkWarning, msgInfo);
 end;
+procedure TMessageManager.warn(const txt: string);
+begin
+  inc(nWarns);
+  //Usamos el objeto "minfo" como parámetro
+  minfo.txt := txt;
+  minfo.fname := '';
+  minfo.row := -1;
+  minfo.col := -1;
+  if Assigned(OnMessage) then OnMessage(mkWarning, minfo);
+end;
 procedure TMessageManager.error(const msgInfo: TMsgInfo);
+{Genera un mensaje de error}
 begin
   inc(nErrors);
   if Assigned(OnMessage) then OnMessage(mkError, msgInfo);
+end;
+procedure TMessageManager.error(const txt: string);
+{Genera un mensaje de error sin ubicación en el código fuente}
+begin
+  inc(nErrors);
+  //Usamos el objeto "minfo" como parámetro
+  minfo.txt := txt;
+  minfo.fname := '';
+  minfo.row := -1;
+  minfo.col := -1;
+  if Assigned(OnMessage) then OnMessage(mkError, minfo);
 end;
 procedure TMessageManager.msgBox(const txt: string);
 {Muestra un diñalogo con un mensaje normal}
